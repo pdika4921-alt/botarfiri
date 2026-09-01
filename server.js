@@ -77,11 +77,19 @@ if (TOKEN && !TOKEN.includes('ISI_TOKEN')) {
 }
 
 // ── OCR Helper ───────────────────────────────────────────
+const OCR_CACHE = path.join(__dirname, 'tessdata');
 async function runOCR(imagePath) {
-  const worker = await createWorker('ind+eng');
-  const { data: { text } } = await worker.recognize(imagePath);
-  await worker.terminate();
-  return text.trim();
+  let worker;
+  try {
+    worker = await createWorker(['ind', 'eng'], 1, { cachePath: OCR_CACHE, logger: () => {} });
+    const { data: { text } } = await worker.recognize(imagePath);
+    return (text || '').trim();
+  } catch (e) {
+    console.error('⚠️ OCR gagal:', e.message);
+    return '';
+  } finally {
+    if (worker) await worker.terminate().catch(() => {});
+  }
 }
 
 // Deteksi SN (serial number) dari teks OCR label di bawah QR (format ONT umum)
@@ -1024,8 +1032,8 @@ db.allP('SELECT id, login_token FROM users WHERE login_token IS NULL OR login_to
   .then(rows => Promise.all(rows.map(u => db.runP('UPDATE users SET login_token=? WHERE id=?', [genToken(), u.id]))))
   .catch(() => {});
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server berjalan di http://localhost:${PORT}`);
-  console.log(`📊 Dashboard: http://localhost:${PORT} (login: admin/admin123)`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n🚀 Server berjalan di http://0.0.0.0:${PORT}`);
+  console.log(`📊 Dashboard port: ${PORT} (login: admin/admin123)`);
   console.log(`🤖 Bot Telegram aktif\n`);
 });
