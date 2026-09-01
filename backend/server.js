@@ -26,6 +26,11 @@ const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
 const PUBLIC_URL = (process.env.PUBLIC_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 // ────────────────────────────────────────────────────────
 
+const TOKEN_OK = TOKEN && !TOKEN.includes('ISI_TOKEN');
+console.log(`[DIAG] TELEGRAM_TOKEN set=${!!process.env.TELEGRAM_TOKEN}  (prefix=${String(TOKEN).slice(0,6)}...)`);
+console.log(`[DIAG] Bot diaktifkan: ${TOKEN_OK ? 'YA' : 'TIDAK - token kosong/placeholder'}`);
+console.log(`[DIAG] PUBLIC_URL=${PUBLIC_URL}  PORT=${PORT}`);
+
 function genToken(len = 32) {
   return crypto.randomBytes(len).toString('hex');
 }
