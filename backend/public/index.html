@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Telkom Validator — Dashboard</title>
+<title>Telkom Akses Validasi PSB — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -30,6 +30,7 @@
   }
   .login-card { background:#fff; border-radius:22px; padding:34px 32px; width:100%; max-width:400px; box-shadow:0 30px 60px rgba(0,0,0,.25); }
   .login-logo { width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.6rem;margin-bottom:18px; }
+  .login-logo-img { height:54px;background:#fff;border-radius:14px;padding:8px 14px;box-shadow:0 4px 14px rgba(0,0,0,.08);margin-bottom:16px; }
   .login-card h1 { font-size:1.4rem; font-weight:800; }
   .login-card p { color:var(--muted); font-size:.85rem; margin:4px 0 22px; }
   .field { margin-bottom:14px; }
@@ -48,6 +49,7 @@
   /* ── App shell ── */
   .topbar { position:sticky; top:0; z-index:50; background:linear-gradient(135deg,var(--navy) 0%,#1a5fa8 55%,var(--sky) 130%); color:#fff; padding:14px 26px; display:flex; align-items:center; gap:14px; box-shadow:0 6px 20px rgba(17,64,107,.25); }
   .brand { width:40px;height:40px;border-radius:12px;background:#fff;color:var(--navy);display:grid;place-items:center;font-weight:800;font-size:1.3rem; }
+  .brand-img { height:38px;background:#fff;border-radius:10px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15); }
   .topbar h1 { font-size:1.15rem; font-weight:700; }
   .topbar h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;}
   .top-right{margin-left:auto;display:flex;align-items:center;gap:14px;}
@@ -143,8 +145,8 @@
 <!-- ═══ LOGIN ═══ -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-logo">T</div>
-    <h1>Telkom Validator</h1>
+    <img class="login-logo-img" src="https://seeklogo.com/images/T/telkom-akses-logo-7ECCB5449C-seeklogo.com.png" alt="Telkom Akses">
+    <h1>Telkom Akses Validasi PSB</h1>
     <p>Silakan masuk untuk mengelola validasi pasang baru.</p>
     <div class="err" id="login-err"></div>
     <div class="field"><label>Username</label><input type="text" id="login-user" autocomplete="username"></div>
@@ -156,7 +158,7 @@
 <!-- ═══ SETUP AWAL ═══ -->
 <div id="setup-screen" style="display:none">
   <div class="login-card">
-    <div class="login-logo">T</div>
+    <img class="login-logo-img" src="https://seeklogo.com/images/T/telkom-akses-logo-7ECCB5449C-seeklogo.com.png" alt="Telkom Akses">
     <h1>Selamat Datang</h1>
     <p>Buat akun Administrator pertama untuk mulai menggunakan sistem.</p>
     <div class="err" id="setup-err"></div>
@@ -171,8 +173,8 @@
 <!-- ═══ APP ═══ -->
 <div id="app" style="display:none">
   <div class="topbar">
-    <div class="brand">T</div>
-    <div><h1>Telkom Validator<small id="role-label">Dashboard</small></h1></div>
+    <img class="brand-img" src="https://seeklogo.com/images/T/telkom-akses-logo-7ECCB5449C-seeklogo.com.png" alt="Telkom Akses">
+    <div><h1>Telkom Akses Validasi PSB<small id="role-label">Dashboard</small></h1></div>
     <div class="top-right">
       <span class="userchip" id="user-name"></span>
       <span class="rolechip" id="user-role"></span>
