@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Telkom Validator — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #11406b; --blue: #2563eb; --sky: #38bdf8;
+    --green: #16a34a; --green-l: #4ade80; --amber: #f59e0b;
+    --crimson: #dc2626;
+    --bg: #f6f9ff; --card: #fff; --line: #e6eefc;
+    --txt: #0f2540; --muted: #6b7f9e; --r: 16px;
+    --shadow: 0 10px 30px rgba(17,64,107,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Fira Sans','Segoe UI',sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; }
+
+  /* ── Login screen ── */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg,#11406b 0%,#2563eb 55%,#38bdf8 130%); padding: 20px;
+  }
+  #setup-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg,#11406b 0%,#2563eb 55%,#38bdf8 130%); padding: 20px;
+  }
+  .login-card { background:#fff; border-radius:22px; padding:34px 32px; width:100%; max-width:400px; box-shadow:0 30px 60px rgba(0,0,0,.25); }
+  .login-logo { width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.6rem;margin-bottom:18px; }
+  .login-card h1 { font-size:1.4rem; font-weight:800; }
+  .login-card p { color:var(--muted); font-size:.85rem; margin:4px 0 22px; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:.78rem; font-weight:700; margin-bottom:6px; color:var(--navy); }
+  .field input,.field select { width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:11px; font-family:inherit; font-size:.92rem; }
+  .field input:focus,.field select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 4px rgba(37,99,235,.12); }
+  .btn { padding:11px 18px; border-radius:11px; font-family:inherit; font-size:.9rem; font-weight:700; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:8px; transition:transform .15s,opacity .15s,box-shadow .15s; }
+  .btn:active{transform:scale(.96);}
+  .btn-blue{background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;}
+  .btn-green{background:linear-gradient(135deg,#16a34a,#4ade80);color:#fff;}
+  .btn-red{background:linear-gradient(135deg,#dc2626,#f87171);color:#fff;}
+  .btn-outline{background:#eef3fb;color:var(--navy);}
+  .btn-block{width:100%;justify-content:center;}
+  .err{color:#b91c1c;background:#fee2e2;border-radius:8px;padding:9px 12px;font-size:.82rem;margin-bottom:12px;display:none;}
+
+  /* ── App shell ── */
+  .topbar { position:sticky; top:0; z-index:50; background:linear-gradient(135deg,var(--navy) 0%,#1a5fa8 55%,var(--sky) 130%); color:#fff; padding:14px 26px; display:flex; align-items:center; gap:14px; box-shadow:0 6px 20px rgba(17,64,107,.25); }
+  .brand { width:40px;height:40px;border-radius:12px;background:#fff;color:var(--navy);display:grid;place-items:center;font-weight:800;font-size:1.3rem; }
+  .topbar h1 { font-size:1.15rem; font-weight:700; }
+  .topbar h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:14px;}
+  .userchip{background:rgba(255,255,255,.15);padding:6px 13px;border-radius:30px;font-size:.8rem;font-weight:600;}
+  .rolechip{background:rgba(255,255,255,.15);padding:6px 13px;border-radius:30px;font-size:.75rem;font-weight:700;text-transform:uppercase;}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px;}
+
+  /* ── Tabs ── */
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .tab{padding:10px 18px;border-radius:30px;background:var(--card);border:1.5px solid var(--line);color:var(--navy);font-weight:700;font-size:.85rem;cursor:pointer;transition:.15s;}
+  .tab.active{background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;border-color:transparent;}
+
+  /* ── Stats ── */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.stats{grid-template-columns:1fr}}
+  .stat-card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;transition:transform .18s;}
+  .stat-card:hover{transform:translateY(-3px);}
+  .stat-ic{width:50px;height:50px;border-radius:14px;flex-shrink:0;display:grid;place-items:center;color:#fff;}
+  .stat-card.total .stat-ic{background:linear-gradient(135deg,#11406b,#2563eb);}
+  .stat-card.pending .stat-ic{background:linear-gradient(135deg,#f59e0b,#fbbf24);}
+  .stat-card.valid .stat-ic{background:linear-gradient(135deg,#16a34a,#4ade80);}
+  .stat-card.reject .stat-ic{background:linear-gradient(135deg,#dc2626,#f87171);}
+  .stat-ic svg{width:24px;height:24px;}
+  .stat-meta .num{font-size:1.7rem;font-weight:800;line-height:1;}
+  .stat-meta .lbl{font-size:.72rem;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);}
+  .card-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .card-head h3{font-size:1rem;font-weight:800;color:var(--navy);margin-right:auto;}
+  .filters{display:flex;gap:10px;flex-wrap:wrap;}
+  .filters input,.filters select{padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:.85rem;}
+  .table-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:1080px;}
+  thead{background:linear-gradient(180deg,#f2f7ff,#eaf2ff);}
+  th{padding:12px 14px;text-align:left;font-weight:700;color:var(--navy);font-size:.72rem;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
+  td{padding:11px 14px;border-top:1px solid var(--line);vertical-align:middle;}
+  tbody tr{transition:background .12s;}
+  tbody tr:hover{background:#f4f9ff;}
+  td.mono{font-family:'Courier New',monospace;font-size:.8rem;}
+  .badge{padding:4px 10px;border-radius:30px;font-size:.72rem;font-weight:800;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .badge-PENDING{background:#fef3c7;color:#b45309;}
+  .badge-VALID{background:#dcfce7;color:#15803d;}
+  .badge-REJECT{background:#fee2e2;color:#b91c1c;}
+  .chip{display:inline-block;background:#e8f0fb;color:var(--navy);padding:3px 9px;border-radius:20px;font-weight:600;font-size:.76rem;}
+  .thumb{width:44px;height:44px;object-fit:cover;border-radius:9px;cursor:pointer;border:1px solid var(--line);transition:transform .15s;}
+  .thumb:hover{transform:scale(1.12);}
+  .act-btn{padding:6px 11px;border-radius:9px;border:none;cursor:pointer;font-family:inherit;font-size:.76rem;font-weight:700;transition:transform .12s,opacity .12s;}
+  .act-btn:active{transform:scale(.94);}
+  .act-detail{background:#e8f0fb;color:var(--navy);}
+  .act-valid{background:#dcfce7;color:#15803d;margin-left:5px;}
+  .act-reject{background:#fee2e2;color:#b91c1c;margin-left:5px;}
+  .note-cell{max-width:170px;font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);}
+
+  /* ── Modal ── */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(15,37,64,.55);backdrop-filter:blur(3px);z-index:100;align-items:center;justify-content:center;padding:20px;}
+  .modal-bg.open{display:flex;animation:fade .2s;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:#fff;border-radius:20px;padding:26px;max-width:760px;width:100%;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 30px 60px rgba(15,37,64,.3);animation:pop .2s;}
+  @keyframes pop{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  .modal h2{font-size:1.15rem;margin-bottom:16px;color:var(--navy);font-weight:800;}
+  .modal-close{position:absolute;top:14px;right:16px;background:#eef3fb;border:none;color:var(--muted);width:32px;height:32px;border-radius:10px;font-size:1.1rem;cursor:pointer;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;}
+  @media(max-width:560px){.detail-grid{grid-template-columns:1fr}}
+  .detail-item .key{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
+  .detail-item .val{font-size:.9rem;margin-top:2px;word-break:break-all;font-weight:500;}
+  .foto-pair{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .foto-pair img{flex:1;min-width:130px;border-radius:11px;border:1px solid var(--line);object-fit:cover;cursor:zoom-in;}
+  .ocr-box{background:#f4f9ff;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:.8rem;font-family:monospace;color:var(--navy);white-space:pre-wrap;word-break:break-all;margin-top:5px;}
+  .sec-title{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:8px;margin-top:16px;}
+  .review-panel{background:#f4f9ff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:18px;}
+  .check-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:.88rem;}
+  .check-row input{width:18px;height:18px;accent-color:var(--green);}
+
+  #lightbox{display:none;position:fixed;inset:0;background:rgba(10,20,40,.92);z-index:200;align-items:center;justify-content:center;cursor:zoom-out;}
+  #lightbox.open{display:flex;}
+  #lightbox img{max-width:92vw;max-height:90vh;border-radius:12px;}
+
+  .chbar-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:.82rem;color:var(--muted);font-weight:600;}
+  .chbar-track{flex:1;height:14px;background:#eef3f9;border-radius:8px;overflow:hidden;}
+  .chbar-fill{height:100%;border-radius:8px;transition:width .5s ease;}
+  .chbar-val{min-width:52px;text-align:right;color:var(--navy);font-weight:800;}
+  .trend-bar{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:6px;}
+  .trend-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;}
+  .trend-col .b{width:70%;background:linear-gradient(180deg,#2ea8f0,#7c6cf0);border-radius:6px 6px 0 0;min-height:2px;transition:height .5s ease;}
+  .trend-lab{font-size:.68rem;color:var(--muted);font-weight:700;}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">T</div>
+    <h1>Telkom Validator</h1>
+    <p>Silakan masuk untuk mengelola validasi pasang baru.</p>
+    <div class="err" id="login-err"></div>
+    <div class="field"><label>Username</label><input type="text" id="login-user" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input type="password" id="login-pass" autocomplete="current-password"></div>
+    <button class="btn btn-blue btn-block" onclick="doLogin()">Masuk</button>
+  </div>
+</div>
+
+<!-- ═══ SETUP AWAL ═══ -->
+<div id="setup-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">T</div>
+    <h1>Selamat Datang</h1>
+    <p>Buat akun Administrator pertama untuk mulai menggunakan sistem.</p>
+    <div class="err" id="setup-err"></div>
+    <div class="field"><label>NIK Anda</label><input type="text" id="st-nik"></div>
+    <div class="field"><label>Nama Lengkap</label><input type="text" id="st-nama"></div>
+    <div class="field"><label>Username (login)</label><input type="text" id="st-username"></div>
+    <div class="field"><label>Password</label><input type="password" id="st-password"></div>
+    <button class="btn btn-green btn-block" onclick="doSetup()">Buat Admin & Masuk</button>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div class="brand">T</div>
+    <div><h1>Telkom Validator<small id="role-label">Dashboard</small></h1></div>
+    <div class="top-right">
+      <span class="userchip" id="user-name"></span>
+      <span class="rolechip" id="user-role"></span>
+      <button class="btn btn-outline" onclick="doLogout()">Keluar</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="tabs" id="tabs"></div>
+
+    <div class="stats" id="stats"></div>
+
+    <!-- TAB: jobs -->
+    <div id="jobs-view">
+      <div id="chart-block" style="display:none;margin-bottom:20px">
+        <div class="stats" style="grid-template-columns:1fr 1.4fr;margin-bottom:0" id="chart-stats">
+          <div class="card" style="padding:18px">
+            <div style="font-weight:800;color:var(--navy);margin-bottom:14px">Distribusi Status</div>
+            <div id="chart-status"></div>
+          </div>
+          <div class="card" style="padding:18px">
+            <div style="font-weight:800;color:var(--navy);margin-bottom:14px">Trend 7 Hari Terakhir</div>
+            <div id="chart-trend"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h3 id="jobs-title">Daftar Pekerjaan</h3>
+          <div class="filters">
+            <input type="text" id="search" placeholder="Cari WONUM / NIK / nama..." style="min-width:150px">
+            <select id="nik-filter" style="display:none"></select>
+            <select id="status-filter">
+              <option value="ALL">Semua Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="VALID">Valid</option>
+              <option value="REJECT">Ditolak</option>
+            </select>
+            <button class="btn btn-blue" onclick="loadJobs()">Muat Ulang</button>
+            <button class="btn btn-green" onclick="exportCSV()">⬇ Export</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr id="jobs-thead"></tr></thead>
+            <tbody id="jobs-tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty" style="display:none">Belum ada data.</div>
+      </div>
+    </div>
+
+    <!-- TAB: users (admin) -->
+    <div id="users-view" style="display:none">
+      <div class="card">
+        <div class="card-head"><h3>🔔 Notifikasi Telegram (Penerima Tambahan)</h3></div>
+        <p style="margin:0 0 12px;color:var(--muted);font-size:.85rem;line-height:1.5">
+          Kirim ringkasan otomatis ke staf/grup Telegram setiap ada <b>pekerjaan baru</b> masuk dan saat statusnya berubah (VALID/REJECT).<br>
+          Isi <b>Chat ID</b> (angka), pisahkan dengan koma untuk beberapa penerima. Untuk grup, tambahkan akun bot ini sebagai anggota.
+        </p>
+        <div class="filters" style="justify-content:flex-start">
+          <input type="text" id="notify-targets" placeholder="cth: 123456789, -1001234567890" style="max-width:420px">
+          <button class="btn btn-green" onclick="saveNotifyTargets()">Simpan</button>
+        </div>
+        <div class="card-head" style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px">
+          <h3>Kelola Akun Login</h3>
+          <div class="filters">
+            <button class="btn btn-green" onclick="openUserModal(null)">+ Buat Akun</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>NIK</th><th>Nama</th><th>Username</th><th>Role</th><th>Chat ID</th><th>Aksi</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-head"><h3>Panduan Pautan Bot Telegram</h3></div>
+        <div style="padding:16px 20px;font-size:.88rem;color:var(--muted)">
+          Agar revisi dari validator masuk ke chat bot teknisi yang tepat: teknisi mengetik <b>/link NIK</b> di bot Telegram,
+          lalu NIK tersebut otomatis tertaut dengan chat-nya. Admin dapat juga mengisi <b>Chat ID</b> manual pada akun.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Job Detail Modal ═══ -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target.id==='modal-bg')closeModal()">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 id="modal-title">Detail</h2>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══ Edit Revisi Modal (teknisi) ═══ -->
+<div class="modal-bg" id="edit-modal-bg" onclick="if(event.target.id==='edit-modal-bg')closeEditModal()">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <h2 id="edit-modal-title">Revisi Pekerjaan</h2>
+    <div class="err" id="edit-err"></div>
+    <div class="detail-grid" style="grid-template-columns:1fr 1fr" id="edit-fields"></div>
+    <div class="sec-title" style="margin-top:16px">Upload Ulang Foto</div>
+    <div id="edit-photos" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+    <div id="edit-fileinputs" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto ODP Terbuka</label><input type="file" id="ef-buka" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto ODP Tertutup</label><input type="file" id="ef-tutup" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Redaman ODP</label><input type="file" id="ef-redaman" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Clamp Hook</label><input type="file" id="ef-clamp" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto S-Clamp Tiang</label><input type="file" id="ef-sclamp" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto IKR</label><input type="file" id="ef-ikr" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Belakang SN ONT</label><input type="file" id="ef-belsn" accept=".jpg,.jpeg,.png"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-blue" onclick="saveEditBtn()">Simpan Perubahan</button>
+      <button class="btn btn-green" onclick="resubmitJob()">✓ Kirim Ulang untuk Validasi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ User Modal (admin) ═══ -->
+<div class="modal-bg" id="user-modal-bg" onclick="if(event.target.id==='user-modal-bg')closeUserModal()">
+  <div class="modal" style="max-width:440px">
+    <button class="modal-close" onclick="closeUserModal()">✕</button>
+    <h2 id="user-modal-title">Buat Akun</h2>
+    <div class="field"><label>NIK</label><input id="u-nik" placeholder="NIK teknisi/validator"></div>
+    <div class="field"><label>Nama</label><input id="u-nama" placeholder="Nama lengkap"></div>
+    <div class="field"><label>Username (login)</label><input id="u-username" placeholder="username"></div>
+    <div class="field"><label>Password</label><input id="u-password" type="password" placeholder="password"></div>
+    <div class="field"><label>Role</label><select id="u-role"><option value="teknisi">Teknisi</option><option value="validator">Validator</option><option value="admin">Admin</option></select></div>
+    <div class="field"><label>Chat ID Telegram (opsional)</label><input id="u-chat" placeholder="contoh: 123456789"></div>
+    <button class="btn btn-blue btn-block" onclick="saveUser()">Simpan</button>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let ME = null;
+let allJobs = [];
+
+// ── Auth ─────────────────────────────────────
+async function init() {
+  const st = await fetch(`${API}/setup/status`).then(r => r.json()).catch(() => ({ needsSetup: false }));
+  if (st.needsSetup) { showSetup(); return; }
+  const r = await fetch(`${API}/auth/me`).then(r => r.json()).catch(() => ({ user: null }));
+  if (r.user) {
+    showApp(r.user);
+    // auto-login dari link bot (reject): buka halaman revisi langsung
+    const m = window.location.hash.match(/^#edit=(\d+)/);
+    if (m) setTimeout(() => openEditModal(Number(m[1])), 350);
+    // link token tidak valid
+    if (new URLSearchParams(window.location.search).get('error') === 'autologin') {
+      alert('⚠️ Link login tidak valid / token sudah diganti. Hubungi admin untuk link baru.');
+      history.replaceState(null, '', window.location.pathname);
+    }
+  } else showLogin();
+  document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+}
+function showSetup() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('st-password').addEventListener('keydown', e => { if (e.key === 'Enter') doSetup(); });
+}
+async function doSetup() {
+  const payload = {
+    nik: document.getElementById('st-nik').value.trim(),
+    nama: document.getElementById('st-nama').value.trim(),
+    username: document.getElementById('st-username').value.trim(),
+    password: document.getElementById('st-password').value
+  };
+  const err = document.getElementById('setup-err');
+  err.style.display = 'none';
+  const r = await fetch(`${API}/setup`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  });
+  const j = await r.json();
+  if (!r.ok) { err.textContent = j.error || 'Gagal membuat admin'; err.style.display = 'block'; return; }
+  showApp(j.user);
+}
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+}
+function showApp(user) {
+  ME = user;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-name').textContent = user.nama;
+  document.getElementById('user-role').textContent = user.role;
+  document.getElementById('role-label').textContent = roleLabel(user.role);
+  renderTabs();
+  initNikFilter();
+  loadStats();
+  loadJobs();
+}
+function roleLabel(r) { return r === 'admin' ? 'Administrator' : r === 'validator' ? 'Validator' : 'Teknisi'; }
+
+async function initNikFilter() {
+  const sel = document.getElementById('nik-filter');
+  if (ME.role === 'teknisi') { sel.style.display = 'none'; return; }
+  sel.style.display = 'inline-block';
+  const teknisi = await fetch(`${API}/teknisi-list`).then(r => r.json()).catch(() => []);
+  sel.innerHTML = '<option value="">Semua Teknisi</option>' + teknisi.map(t => `<option value="${t.nik}">${t.nama} (${t.nik})</option>`).join('');
+  sel.onchange = loadJobs;
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  const r = await fetch(`${API}/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const j = await r.json();
+  if (!r.ok) { err.textContent = j.error || 'Login gagal'; err.style.display = 'block'; return; }
+  showApp(j.user);
+}
+async function doLogout() {
+  await fetch(`${API}/auth/logout`, { method: 'POST' });
+  showLogin();
+}
+
+// ── Tabs ────────────────────────────────────
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  const items = [];
+  items.push({ id: 'jobs', label: '📋 Pekerjaan' });
+  if (ME.role === 'admin') items.push({ id: 'users', label: '👥 Kelola Akun' });
+  showTab('jobs');
+  items.forEach(t => {
+    const el = document.createElement('button');
+    el.className = 'tab'; el.dataset.tab = t.id; el.textContent = t.label;
+    el.onclick = () => showTab(t.id);
+    tabs.appendChild(el);
+  });
+}
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  document.getElementById('jobs-view').style.display = id === 'jobs' ? 'block' : 'none';
+  document.getElementById('users-view').style.display = id === 'users' ? 'block' : 'none';
+  if (id === 'users') loadUsers();
+  else loadJobs();
+}
+
+// ── Stats ───────────────────────────────────
+async function loadStats() {
+  const r = await fetch(`${API}/stats`).then(r => r.json()).catch(() => null);
+  if (!r) return;
+  const items = [
+    { c: 'total', l: 'Total Pekerjaan', n: r.total },
+    { c: 'pending', l: 'Pending', n: r.PENDING },
+    { c: 'valid', l: 'Valid', n: r.VALID },
+    { c: 'reject', l: 'Ditolak', n: r.REJECT },
+  ];
+  const ic = {
+    total: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>',
+    pending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    valid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01 9 11.01"/></svg>',
+    reject: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>'
+  };
+  document.getElementById('stats').innerHTML = items.map(x =>
+    `<div class="stat-card ${x.c}"><div class="stat-ic">${ic[x.c]}</div><div class="stat-meta"><div class="num">${x.n}</div><div class="lbl">${x.l}</div></div></div>`
+  ).join('');
+}
+
+// ── Jobs ────────────────────────────────────
+async function loadJobs() {
+  const search = document.getElementById('search').value.trim();
+  const status = document.getElementById('status-filter').value;
+  const nikFil = document.getElementById('nik-filter').value;
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (status !== 'ALL') params.set('status', status);
+  if (nikFil) params.set('nik', nikFil);
+  allJobs = await fetch(`${API}/jobs?${params}`).then(r => r.json()).catch(() => []);
+  renderJobs();
+  loadStats();
+  loadChart();
+}
+
+const STATUS_COLOR = { PENDING: '#f5b544', VALID: '#2bb673', REJECT: '#e75b5b' };
+
+async function loadChart() {
+  const block = document.getElementById('chart-block');
+  const show = ME.role === 'admin' || ME.role === 'validator';
+  block.style.display = show ? 'block' : 'none';
+  if (!show) return;
+  const r = await fetch(`${API}/stats/chart`).then(res => res.json()).catch(() => null);
+  if (!r) return;
+  // Distribusi status
+  const sMax = Math.max(1, ...Object.values(r.byStatus));
+  document.getElementById('chart-status').innerHTML =
+    Object.entries(r.byStatus).filter(([,n]) => true).map(([k, n]) =>
+      `<div class="chbar-row"><span style="width:64px">${k}</span>
+        <div class="chbar-track"><div class="chbar-fill" style="width:${(n / sMax) * 100}%;background:${STATUS_COLOR[k]}"></div></div>
+        <div class="chbar-val">${n}</div></div>`
+    ).join('');
+  // Trend 7 hari
+  const tMax = Math.max(1, ...r.trend.values);
+  document.getElementById('chart-trend').innerHTML =
+    `<div class="trend-bar">` + r.trend.values.map((v, i) =>
+      `<div class="trend-col"><div class="b" style="height:${(v / tMax) * 100}%"></div><span class="trend-lab">${r.trend.labels[i]}</span></div>`
+    ).join('') + `</div>`;
+}
+
+const COLUMNS = {
+  admin: ['#','NIK','Nama','WONUM','SC','STO','Layanan','SN ODP','SN DC','Foto ODP','Status','Catatan','Aksi'],
+  validator: ['#','NIK','Nama','WONUM','SC','STO','Layanan','SN ODP','SN DC','Foto ODP','Status','Catatan','Aksi'],
+  teknisi: ['#','WONUM','SC','STO','Layanan','Status','Catatan','Aksi']
+};
+
+function renderJobs() {
+  document.getElementById('jobs-thead').innerHTML = COLUMNS[ME.role].map(c => `<th>${c}</th>`).join('');
+  const empty = document.getElementById('empty');
+  if (!allJobs.length) { document.getElementById('jobs-tbody').innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const rows = allJobs.map(j => {
+    const pendingValid = ME.role !== 'teknisi' && j.status === 'PENDING';
+    const isAdminVal = ME.role === 'admin' || ME.role === 'validator';
+    let cells = '';
+    if (ME.role === 'teknisi') {
+      cells = `
+        <td style="font-weight:700">${j.id}</td>
+        <td class="mono" style="color:var(--navy);font-weight:600">${j.wonum || '-'}</td>
+        <td>${j.sc || '-'}</td><td>${j.sto || '-'}</td>
+        <td><span class="chip">${j.layanan || '-'}</span></td>
+        <td><span class="badge badge-${j.status}">${j.status}</span></td>
+        <td class="note-cell" title="${j.review_note||''}">${j.review_note || '-'}</td>
+        <td>
+          <button class="act-btn act-detail" onclick="openDetail(${j.id})">Lihat</button>
+          ${j.status==='REJECT'
+            ? `<button class="act-btn act-valid" onclick="openEditModal(${j.id})">✏ Edit Revisi</button>
+               ${!j.ack ? `<button class="act-btn act-valid" onclick="ackJob(${j.id})">✓ Konfirmasi</button>` : ''}`
+            : ''}
+        </td>`;
+    } else {
+      cells = `
+        <td style="font-weight:700">${j.id}</td>
+        <td class="mono">${j.nik || '-'}</td>
+        <td>${j.nama || '-'}</td>
+        <td class="mono" style="color:var(--navy);font-weight:600">${j.wonum || '-'}</td>
+        <td>${j.sc || '-'}</td><td>${j.sto || '-'}</td>
+        <td><span class="chip">${j.layanan || '-'}</span></td>
+        <td>${j.sn_odp ? `<span class="ocr-text" title="${j.sn_odp}" style="color:var(--blue)">${j.sn_odp}</span>` : (j.sn_issue ? `<span style="color:var(--warn,#e67e22)" title="SN perlu cek manual">⚠ perlu cek</span>` : '-')}</td>
+        <td>${j.sn_dc ? `<span class="ocr-text" title="${j.sn_dc}" style="color:var(--blue)">${j.sn_dc}</span>` : (j.sn_issue ? `<span style="color:var(--warn,#e67e22)" title="SN perlu cek manual">⚠ perlu cek</span>` : '-')}</td>
+        <td>
+          ${j.foto_odp_buka ? `<img class="thumb" src="/uploads/${j.foto_odp_buka}" onclick="lightbox('/uploads/${j.foto_odp_buka}')">` : ''}
+          ${j.foto_odp_tutup ? `<img class="thumb" src="/uploads/${j.foto_odp_tutup}" onclick="lightbox('/uploads/${j.foto_odp_tutup}')">` : ''}
+        </td>
+        <td><span class="badge badge-${j.status}">${j.status}</span></td>
+        <td class="note-cell" title="${j.review_note||''}">${j.review_note || '-'}</td>
+        <td style="white-space:nowrap">
+          <button class="act-btn act-detail" onclick="openDetail(${j.id})">Detail</button>
+          ${pendingValid ? `<button class="act-btn act-valid" onclick="openDetail(${j.id},'review')">Validasi</button>` : ''}
+        </td>`;
+    }
+    return `<tr>${cells}</tr>`;
+  }).join('');
+  document.getElementById('jobs-tbody').innerHTML = rows;
+}
+
+function fmt(v) { return v || '<span style="color:var(--muted)">-</span>'; }
+
+// ── Detail + review ─────────────────────────
+async function openDetail(id, focus) {
+  const j = await fetch(`${API}/jobs/${id}`).then(r => r.json());
+  document.getElementById('modal-title').textContent = `WONUM: ${j.wonum || '-'}  #${j.id}  — ${j.status}`;
+
+  const fields = [
+    ['NIK', j.nik], ['Nama Teknisi', j.nama], ['WONUM', j.wonum], ['SC', j.sc],
+    ['STO', j.sto], ['Layanan', j.layanan], ['No. Internet', j.no_internet],
+    ['No. Voice', j.no_voice], ['Datek ODP', j.datek_odp], ['Port ODP', j.port_odp],
+    ['SN ODP', j.sn_odp || (j.sn_issue ? '⚠ perlu cek manual' : '')],
+    ['SN DC', j.sn_dc || (j.sn_issue ? '⚠ perlu cek manual' : '')],
+    ['Valins ID', j.valins_id], ['P. DC', j.p_dc],
+    ['Lokasi Pelanggan', j.lokasi_pelanggan], ['Lokasi ODP', j.lokasi_odp],
+    ['Validator', j.reviewed_by || '-'], ['Divalidasi', j.reviewed_at || '-']
+  ];
+
+  let reviewHtml = '';
+  if ((ME.role === 'admin' || ME.role === 'validator') && j.status === 'PENDING') {
+    const cats = await fetch(`${API}/review-categories`).then(r => r.json());
+    reviewHtml = `
+      <div class="review-panel">
+        <div class="sec-title" style="margin-top:0">Checklist Validasi</div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Foto QR ODP jelas & terbaca</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Foto QR DC jelas & terbaca</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Foto ODP buka (bebas patchcord)</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Foto ODP tertutup</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Lokasi pelanggan & ODP tersedia</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Data laporan lengkap</label></div>
+        <div style="margin-top:14px">
+          <label style="font-size:.76rem;font-weight:700;color:var(--navy)">Kategori Revisi</label>
+          <select id="rev-cat" style="width:100%;margin-top:6px;padding:9px;border:1.5px solid var(--line);border-radius:10px">
+            ${cats.map(c => `<option>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div style="margin-top:12px">
+          <label style="font-size:.76rem;font-weight:700;color:var(--navy)">Catatan untuk Teknisi</label>
+          <textarea id="rev-note" rows="3" style="width:100%;margin-top:6px;padding:9px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit" placeholder="Tuliskan alasan / perbaikan yang dibutuhkan..."></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-green" onclick="reviewJob(${j.id},'VALID')">✓ Setujui (Valid)</button>
+          <button class="btn btn-red" onclick="reviewJob(${j.id},'REJECT')">✕ Revisi (Ditolak)</button>
+        </div>
+      </div>`;
+  } else if (j.review_note) {
+    reviewHtml = `
+      <div class="review-panel">
+        <div class="sec-title" style="margin-top:0">Hasil Review</div>
+        <div style="font-size:.88rem"><b>Status:</b> <span class="badge badge-${j.status}">${j.status}</span></div>
+        ${j.review_cat ? `<div style="font-size:.86rem;margin-top:6px"><b>Kategori:</b> ${j.review_cat}</div>` : ''}
+        ${j.review_note ? `<div style="font-size:.86rem;margin-top:6px"><b>Catatan:</b> ${j.review_note}</div>` : ''}
+      </div>`;
+  }
+
+  const photos = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup']]
+    .filter(([k]) => j[k]).map(([k,l]) => `<div style="text-align:center"><img src="/uploads/${j[k]}" onclick="lightbox('/uploads/${j[k]}')" style="width:100%;max-width:220px;border-radius:10px;border:1px solid var(--line);cursor:zoom-in"><div style="font-size:.7rem;color:var(--muted);margin-top:4px">${l}</div></div>`).join('');
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-grid">${fields.map(([k,v]) => `<div class="detail-item"><div class="key">${k}</div><div class="val">${fmt(v)}</div></div>`).join('')}</div>
+
+    <div class="sec-title">Hasil OCR</div>
+    <div class="ocr-box">QR ODP: ${j.ocr_qr_odp || '(kosong)'}\n\nQR DC: ${j.ocr_qr_dc || '(kosong)'}</div>
+
+    <div class="sec-title">Dokumentasi Foto</div>
+    <div class="foto-pair">${photos || '<span style="color:var(--muted)">Tidak ada foto</span>'}</div>
+
+    ${reviewHtml}
+  `;
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+async function reviewJob(id, status) {
+  const note = document.getElementById('rev-note') ? document.getElementById('rev-note').value : '';
+  const cat = document.getElementById('rev-cat') ? document.getElementById('rev-cat').value : null;
+  const label = status === 'VALID' ? 'setujui' : 'revisi';
+  if (!confirm(`Yakin ${label} pekerjaan #${id}?`)) return;
+  const r = await fetch(`${API}/jobs/${id}/review`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, note, category: cat })
+  });
+  const j = await r.json();
+  alert(j.success ? `Berhasil: #${id} → ${status}` : `Gagal: ${j.error || ''}`);
+  if (j.success) { closeModal(); loadJobs(); }
+}
+
+async function ackJob(id) {
+  if (!confirm('Tandai bahwa Anda akan memperbaiki/revisi pekerjaan ini?')) return;
+  await fetch(`${API}/jobs/${id}/ack`, { method: 'POST' });
+  loadJobs();
+}
+
+// ── Export CSV ─────────────────────────────
+function exportCSV() {
+  const search = document.getElementById('search').value.trim();
+  const status = document.getElementById('status-filter').value;
+  const nikFil = document.getElementById('nik-filter').value;
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (status !== 'ALL') params.set('status', status);
+  if (nikFil) params.set('nik', nikFil);
+  window.location.href = `${API}/export?${params}`;
+}
+
+// ── Edit Revisi (teknisi) ──────────────────
+let editJobId = null;
+async function openEditModal(id) {
+  editJobId = id;
+  const j = await fetch(`${API}/jobs/${id}`).then(r => r.json());
+  document.getElementById('edit-modal-title').textContent = `Revisi #${id} — ${j.wonum || ''}`;
+  document.getElementById('edit-err').style.display = 'none';
+
+  const fields = [
+    ['nama','Nama Teknisi'],['wonum','WONUM'],['sc','SC'],['sto','STO'],
+    ['layanan','Layanan'],['no_internet','No. Internet'],['no_voice','No. Voice'],
+    ['datek_odp','Datek ODP'],['port_odp','Port ODP'],['valins_id','Valins ID'],
+    ['p_dc','P. DC'],['lokasi_pelanggan','Lokasi Pelanggan'],['lokasi_odp','Lokasi ODP']
+  ];
+  document.getElementById('edit-fields').innerHTML = fields.map(([k,l]) => `
+    <div class="detail-item"><div class="key">${l}</div>
+      <input class="ef" data-k="${k}" value="${(j[k]||'').replace(/"/g,'&quot;')}" style="width:100%;margin-top:3px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px">
+    </div>`).join('');
+
+  const photov = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup']]
+    .filter(([k]) => j[k]).map(([k,l]) => `<img src="/uploads/${j[k]}" title="${l}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line)" onclick="lightbox('/uploads/${j[k]}')">`).join('');
+  document.getElementById('edit-photos').innerHTML = photov || '<span style="color:var(--muted)">Belum ada foto</span>';
+  ['ef-buka','ef-tutup','ef-redaman','ef-clamp','ef-sclamp','ef-ikr','ef-belsn'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('edit-modal-bg').classList.add('open');
+}
+function closeEditModal() {
+  document.getElementById('edit-modal-bg').classList.remove('open');
+  editJobId = null;
+}
+async function saveEdit() {
+  const payload = {};
+  document.querySelectorAll('.ef').forEach(inp => { payload[inp.dataset.k] = inp.value.trim(); });
+  const r = await fetch(`${API}/jobs/${editJobId}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  });
+  const j = await r.json();
+  if (!j.success) return { ok: false, error: j.error || 'Gagal menyimpan' };
+  try {
+    await uploadEditPhotos();
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+  return { ok: true };
+}
+async function saveEditBtn() {
+  const res = await saveEdit();
+  if (!res.ok) {
+    const err = document.getElementById('edit-err');
+    err.textContent = res.error; err.style.display = 'block'; return;
+  }
+  alert('Perubahan disimpan.');
+  closeEditModal(); loadJobs();
+}
+async function uploadEditPhotos() {
+  const fd = new FormData();
+  const PHOTO_INPUTS = {
+    'ef-buka':'foto_odp_buka','ef-tutup':'foto_odp_tutup','ef-redaman':'foto_redaman_odp',
+    'ef-clamp':'foto_clamp_hook','ef-sclamp':'foto_sclamp_tiang','ef-ikr':'foto_ikr','ef-belsn':'foto_belakang_sn'
+  };
+  const okExt = (n) => /\.(jpe?g|png)$/i.test(n);
+  let count = 0;
+  for (const [elId, field] of Object.entries(PHOTO_INPUTS)) {
+    const f = document.getElementById(elId).files[0];
+    if (!f) continue;
+    if (!okExt(f.name)) throw new Error('Format foto harus JPG/PNG: ' + field);
+    fd.append(field, f); count++;
+  }
+  if (!count) return;
+  const r = await fetch(`${API}/jobs/${editJobId}/upload`, { method: 'POST', body: fd });
+  const j = await r.json();
+  if (!j.success) throw new Error(j.error || 'Gagal unggah foto');
+}
+async function resubmitJob() {
+  if (!confirm('Kirim ulang pekerjaan ini untuk divalidasi ulang oleh validator?')) return;
+  const res = await saveEdit();
+  if (!res.ok) {
+    const err = document.getElementById('edit-err');
+    err.textContent = res.error; err.style.display = 'block'; return;
+  }
+  const r = await fetch(`${API}/jobs/${editJobId}/resubmit`, { method: 'POST' });
+  const j = await r.json();
+  alert(j.success ? 'Dikirim ulang ke validasi.' : 'Gagal: ' + (j.error || ''));
+  closeEditModal(); loadJobs();
+}
+
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+function lightbox(src) {
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;background:rgba(10,20,40,.94);z-index:300;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  lb.innerHTML = `<img src="${src}" style="max-width:94vw;max-height:92vh;border-radius:12px">`;
+  lb.onclick = () => lb.remove();
+  document.body.appendChild(lb);
+}
+
+// ── Users (admin) ───────────────────────────
+async function loadUsers() {
+  const users = await fetch(`${API}/users`).then(r => r.json()).catch(() => []);
+  allUsers = users;
+  loadNotifyTargets();
+  document.getElementById('users-tbody').innerHTML = users.map(u => `
+    <tr>
+      <td class="mono">${u.nik}</td><td>${u.nama}</td><td>${u.username}</td>
+      <td><span class="chip">${u.role}</span></td>
+      <td class="mono">${u.chat_id || '-'}</td>
+      <td style="white-space:nowrap">
+        <button class="act-btn act-detail" onclick="openUserModal(${u.id})">Edit</button>
+        <button class="act-btn act-detail" onclick="copyLink(${u.id})">Link</button>
+        <button class="act-btn act-reject" onclick="deleteUser(${u.id})">Hapus</button>
+      </td>
+    </tr>`).join('');
+}
+async function copyLink(id) {
+  const u = allUsers.find(x => x.id === id);
+  if (!u || !u.login_token) { alert('User tidak punya token login.'); return; }
+  const base = window.location.origin;
+  const link = `${base}/auth/auto?token=${u.login_token}`;
+  try { await navigator.clipboard.writeText(link); alert('✅ Link login otomatis disalin ke clipboard:\n' + link); }
+  catch (e) { prompt('Salin link ini (tinggal dibuka teknisi, sudah login otomatis):', link); }
+}
+async function loadNotifyTargets() {
+  const r = await fetch(`${API}/settings/notify-targets`).then(res => res.json()).catch(() => null);
+  if (r) document.getElementById('notify-targets').value = (r.targets || []).join(', ');
+}
+async function saveNotifyTargets() {
+  const raw = document.getElementById('notify-targets').value;
+  const targets = raw.split(',').map(s => s.trim()).filter(Boolean);
+  const r = await fetch(`${API}/settings/notify-targets`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targets })
+  }).then(res => res.json());
+  alert(r.success ? 'Notifikasi target tersimpan' : 'Gagal: ' + (r.error || ''));
+  loadNotifyTargets();
+}
+function openUserModal(id) {
+  editUserId = id || null;
+  document.getElementById('user-modal-title').textContent = id ? 'Edit Akun' : 'Buat Akun';
+  document.getElementById('u-nik').disabled = !!id;
+  const u = id ? allUsers.find(x => x.id === id) : null;
+  document.getElementById('u-nik').value = u ? u.nik : '';
+  document.getElementById('u-nama').value = u ? u.nama : '';
+  document.getElementById('u-username').value = u ? u.username : '';
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-role').value = u ? u.role : 'teknisi';
+  document.getElementById('u-chat').value = u && u.chat_id ? u.chat_id : '';
+  document.getElementById('user-modal-bg').classList.add('open');
+}
+let allUsers = [];
+let editUserId = null;
+async function saveUser() {
+  const id = editUserId;
+  const payload = {
+    nik: document.getElementById('u-nik').value.trim(),
+    nama: document.getElementById('u-nama').value.trim(),
+    username: document.getElementById('u-username').value.trim(),
+    role: document.getElementById('u-role').value,
+    chat_id: document.getElementById('u-chat').value.trim() || null
+  };
+  const pass = document.getElementById('u-password').value;
+  if (pass) payload.password = pass;
+  const url = id ? `${API}/users/${id}` : `${API}/users`;
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const j = await r.json();
+  alert(j.success ? 'Tersimpan' : 'Gagal: ' + (j.error || ''));
+  if (j.success) { closeUserModal(); loadUsers(); }
+}
+function closeUserModal() { document.getElementById('user-modal-bg').classList.remove('open'); }
+async function deleteUser(id) {
+  if (!confirm('Hapus akun ini?')) return;
+  await fetch(`${API}/users/${id}`, { method: 'DELETE' });
+  loadUsers();
+}
+
+document.getElementById('search').addEventListener('keyup', e => { if (e.key === 'Enter') loadJobs(); });
+document.getElementById('status-filter').addEventListener('change', loadJobs);
+
+init();
+setInterval(loadJobs, 20000);
+</script>
+</body>
+</html>
