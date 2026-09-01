@@ -11,6 +11,14 @@ const { createWorker } = require('tesseract.js');
 const db         = require('./database');
 const { hashPassword, verifyPassword } = require('./database');
 
+// Jangan mati hanya karena error Telegram/bot — log & lanjut (penting utk shared hosting)
+process.on('unhandledRejection', (reason) => {
+  console.error('⚠️ unhandledRejection (diamankan):', reason && reason.message ? reason.message : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ uncaughtException (diamankan):', err && err.message ? err.message : err);
+});
+
 // ── Config ──────────────────────────────────────────────
 const TOKEN      = process.env.TELEGRAM_TOKEN || 'ISI_TOKEN_BOT_ANDA';
 const PORT       = process.env.PORT || 3000;
@@ -35,7 +43,7 @@ app.use(session({
 }));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ── Multer (upload web) ──────────────────────────────────
@@ -71,6 +79,10 @@ function requireRole(...roles) {
 let bot;
 if (TOKEN && !TOKEN.includes('ISI_TOKEN')) {
   bot = new TelegramBot(TOKEN, { polling: true });
+  bot.on('polling_error', (err) => console.error('⚠️ polling_error:',
+    err && err.message ? err.message : err));
+  bot.on('error', (err) => console.error('⚠️ bot error:',
+    err && err.message ? err.message : err));
   console.log('🤖 Bot Telegram aktif...');
 } else {
   console.log('🤖 Bot Telegram dinonaktifkan (token tidak valid).');
