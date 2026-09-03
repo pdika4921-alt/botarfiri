@@ -142,14 +142,47 @@ async function downloadFile(fileUrl, destPath) {
 const statusIcon = { PENDING: '🟡', VALID: '✅', REJECT: '❌' };
 
 // ── Rekam tautan chat teknisi (mencegah bentrok antar teknisi) ──
+// Satu NIK hanya boleh aktif di satu chat. "Login terbaru menang":
+// bila NIK sudah tertaut ke chat lain, tautan lama dihapus (logout paksa)
+// dan chat lama diberi tahu bahwa sesinya dipindahkan.
 async function bindChat(nik, chatId) {
   if (!nik || chatId == null) return;
+
+  // Cek apakah NIK sudah tertaut ke chat lain
+  const prev = await db.getP(
+    `SELECT chat_id FROM user_chats WHERE nik=? AND chat_id<>?`,
+    [nik, chatId]
+  ).catch(() => null);
+
+  if (prev && prev.chat_id != null) {
+    await db.runP(`DELETE FROM user_chats WHERE nik=? AND chat_id<>?`, [nik, chatId]).catch(() => {});
+    try {
+      if (typeof bot !== 'undefined' && bot) {
+        await bot.sendMessage(
+          prev.chat_id,
+          `⚠️ Sesi Anda dipindahkan.\nNIK *${nik}* baru saja login dari chat lain, sehingga chat ini tidak lagi tertaut. Silakan hubungi admin bila ini bukan Anda.`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+    } catch (e) { /* abaikan — chat lama mungkin sudah tidak aktif */ }
+    console.log(`[BIND] NIK ${nik} pindah: chat ${prev.chat_id} -> ${chatId}`);
+  }
+
   await db.runP(
     `INSERT INTO user_chats (nik, chat_id, updated_at)
      VALUES (?,?, CURRENT_TIMESTAMP)
      ON CONFLICT(chat_id) DO UPDATE SET nik=excluded.nik, updated_at=CURRENT_TIMESTAMP`,
     [nik, chatId]
   ).catch(() => {});
+}
+
+// ── Lepas tautan chat dari NIK-nya (logout di bot) ──────────
+async function unbindChat(chatId) {
+  if (chatId == null) return null;
+  const row = await db.getP('SELECT nik FROM user_chats WHERE chat_id=?', [chatId]).catch(() => null);
+  if (!row) return null;
+  await db.runP('DELETE FROM user_chats WHERE chat_id=?', [chatId]).catch(() => {});
+  return row.nik || null;
 }
 
 // ── Ambil NIK yang tertaut ke chat tertentu ──────────────
@@ -318,22 +351,28 @@ if (bot) {
 
   // ── Menu tombol inline utama ─────────────────────────────
   const pendingInput = new Map(); // chatId -> 'nik' | 'wonum' (menunggu ketikan ulang)
-  const MENU = {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '🔐 Login dengan NIK', callback_data: 'MENU|login' }],
-        [{ text: '➕ Input Pekerjaan Baru', callback_data: 'MENU|baru' }],
-        [{ text: '🔍 Cek Status', callback_data: 'MENU|status' }],
-        [{ text: '📋 List Pekerjaan', callback_data: 'MENU|list' }]
-      ]
-    }
+  const menuMarkup = (logged) => {
+    const rows = logged
+      ? [
+          [{ text: '➕ Input Pekerjaan Baru', callback_data: 'MENU|baru' }],
+          [{ text: '🔍 Cek Status', callback_data: 'MENU|status' }],
+          [{ text: '📋 List Pekerjaan', callback_data: 'MENU|list' }],
+          [{ text: '🚪 Logout', callback_data: 'MENU|logout' }]
+        ]
+      : [
+          [{ text: '🔐 Login dengan NIK', callback_data: 'MENU|login' }],
+          [{ text: '➕ Input Pekerjaan Baru', callback_data: 'MENU|baru' }],
+          [{ text: '🔍 Cek Status', callback_data: 'MENU|status' }],
+          [{ text: '📋 List Pekerjaan', callback_data: 'MENU|list' }]
+        ];
+    return { reply_markup: { inline_keyboard: rows } };
   };
-  async function showMenu(chatId, extra) {
+  async function showMenu(chatId, extra, logged = false) {
     await bot.sendMessage(chatId,
       (extra ? extra + '\n\n' : '') +
       `🏢 *Telkom Validator Bot*\n` +
       `Pilih menu di bawah ini:`,
-      { parse_mode: 'Markdown', ...MENU });
+      { parse_mode: 'Markdown', ...menuMarkup(logged) });
   }
   async function doLogin(chatId, nik) {
     nik = (nik || '').trim();
@@ -347,7 +386,8 @@ if (bot) {
     return bot.sendMessage(chatId,
       `✅ Login berhasil.\n` +
       `👤 NIK: *${user.nik}*\n🧑‍🔧 Nama: *${user.nama}*\n\n` +
-      `Tekan tombol di bawah untuk mulai menginput:`, { parse_mode: 'Markdown', ...MENU });
+      `Tekan tombol di bawah ini untuk memilih menu:`,
+      { parse_mode: 'Markdown', ...menuMarkup(true) });
   }
   async function doStatus(chatId, wonum) {
     wonum = (wonum || '').trim();
@@ -528,7 +568,17 @@ if (bot) {
       const logged = who && who.role === 'teknisi';
       return showMenu(chatId, logged
         ? `👋 Selamat datang kembali, *${who.nama}*! Anda sudah login.`
-        : `👋 Selamat datang di *Telkom Validator Bot*.\nSilakan login dulu dengan NIK Anda.`);
+        : `👋 Selamat datang di *Telkom Validator Bot*.\nSilakan login dulu dengan NIK Anda.`, logged);
+    }
+
+    // ── Logout: lepas tautan chat dari NIK ──
+    if (text === '/logout') {
+      const nik = await unbindChat(chatId);
+      sessions.delete(chatId);
+      return bot.sendMessage(chatId, nik
+        ? `🚪 Anda telah logout dari NIK *${nik}*.\nSesi chat ini tidak lagi tertaut.`
+        : `ℹ️ Anda belum login.\nGunakan *Login dengan NIK* untuk masuk.`,
+        { parse_mode: 'Markdown', ...menuMarkup(false) });
     }
 
     if (text === '/baru') {
@@ -602,6 +652,15 @@ if (bot) {
       if (act === 'list') {
         await bot.answerCallbackQuery(cb.id, { text: 'Memuat daftar...' });
         return listJobs(chatId);
+      }
+      if (act === 'logout') {
+        await bot.answerCallbackQuery(cb.id);
+        const nik = await unbindChat(chatId);
+        sessions.delete(chatId);
+        return bot.sendMessage(chatId, nik
+          ? `🚪 Anda telah logout dari NIK *${nik}*.\nSesi chat ini tidak lagi tertaut.`
+          : `ℹ️ Anda belum login.\nGunakan *Login dengan NIK* untuk masuk.`,
+          { parse_mode: 'Markdown', ...menuMarkup(false) });
       }
       return;
     }
