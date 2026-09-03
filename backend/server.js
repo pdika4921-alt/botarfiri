@@ -194,7 +194,10 @@ async function getChatNIK(chatId) {
 // ── Fungsional: target notifikasi tambahan (staf/grup) ───
 async function getNotifyTargets() {
   const row = await db.getP(`SELECT value FROM settings WHERE key='notify_targets'`).catch(() => null);
-  return row && row.value ? row.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const configured = row && row.value ? row.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const def = ['4732751259']; // grup default penerima laporan
+  const merged = [...def, ...configured];
+  return [...new Set(merged)];
 }
 
 async function notifyAdmins(text) {
@@ -238,7 +241,7 @@ const REPORT_FIELDS = [
   ['foto_redaman_odp', 'Redaman ODP'], ['foto_clamp_hook', 'Clamp Hook'],
   ['foto_sclamp_tiang', 'S-Clamp Tiang'], ['foto_ikr', 'IKR'],
   ['foto_belakang_sn', 'Belakang SN ONT'], ['foto_odp_buka', 'ODP Terbuka'],
-  ['foto_odp_tutup', 'ODP Tertutup']
+  ['foto_odp_tutup', 'ODP Tertutup'], ['foto_rumah', 'Foto Rumah']
 ];
 async function sendJobReport(job) {
   if (!bot) return;
@@ -314,6 +317,7 @@ if (bot) {
     { key: 'foto_belakang_sn', label: 'Foto Belakang SN ONT',       type: 'photo',    store: 'foto_belakang_sn', prompt: '📷 Kirim *FOTO BELAKANG SN ONT*.\n(Format JPG/PNG)' },
     { key: 'foto_odp_buka',    label: 'Foto ODP Terbuka',           type: 'photo',    store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
     { key: 'foto_odp_tutup',   label: 'Foto ODP Tertutup',          type: 'photo',    store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
+    { key: 'foto_rumah',       label: 'Foto Rumah',                 type: 'photo',    store: 'foto_rumah', prompt: '🏠 Kirim *FOTO RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
   ];
 
   function buildKeyboard(step) {
@@ -499,15 +503,15 @@ if (bot) {
         datek_odp,port_odp,valins_id,p_dc,lokasi_pelanggan,lokasi_odp,
         ocr_qr_odp,ocr_qr_dc,foto_qr_odp,foto_qr_dc,foto_odp_buka,foto_odp_tutup,
         foto_redaman_odp,foto_clamp_hook,foto_sclamp_tiang,foto_ikr,foto_belakang_sn,
-        sn_odp,sn_dc,sn_issue)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        foto_rumah,sn_odp,sn_dc,sn_issue)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [d.nik, d.nama, d.wonum, d.sc, d.sto, d.layanan,
        d.no_internet, d.no_voice, d.datek_odp, d.port_odp,
        d.valins_id, d.p_dc, d.lokasi_pelanggan, d.lokasi_odp,
        d.ocr_qr_odp, d.ocr_qr_dc, d.foto_qr_odp, d.foto_qr_dc,
        d.foto_odp_buka, d.foto_odp_tutup,
        d.foto_redaman_odp, d.foto_clamp_hook, d.foto_sclamp_tiang, d.foto_ikr, d.foto_belakang_sn,
-       d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0]
+       d.foto_rumah, d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0]
     ).then((r) => {
       sessions.delete(chatId);
       // buat objek job lengkap untuk laporan ke target
@@ -516,6 +520,7 @@ if (bot) {
         foto_odp_buka: d.foto_odp_buka, foto_odp_tutup: d.foto_odp_tutup,
         foto_redaman_odp: d.foto_redaman_odp, foto_clamp_hook: d.foto_clamp_hook,
         foto_sclamp_tiang: d.foto_sclamp_tiang, foto_ikr: d.foto_ikr, foto_belakang_sn: d.foto_belakang_sn,
+        foto_rumah: d.foto_rumah,
         sn_odp: d.sn_odp || null, sn_dc: d.sn_dc || null, sn_issue: d.sn_issue || 0 };
       sendJobReport(job);
       bot.sendMessage(chatId,

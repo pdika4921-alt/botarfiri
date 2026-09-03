@@ -96,7 +96,7 @@ function addColumn(table, name) {
 ['foto_qr_odp', 'foto_qr_dc', 'review_note', 'review_cat', 'reviewed_by',
  'reviewed_at', 'ack', 'sto', 'layanan',
  'foto_redaman_odp', 'foto_clamp_hook', 'foto_sclamp_tiang', 'foto_ikr', 'foto_belakang_sn',
- 'sn_odp', 'sn_dc', 'sn_issue'].forEach(c => addColumn('jobs', c));
+ 'sn_odp', 'sn_dc', 'sn_issue', 'foto_rumah'].forEach(c => addColumn('jobs', c));
 ['chat_id', 'login_token'].forEach(c => addColumn('users', c));
 
 // ── Setup awal: buat admin default hanya jika DB kosong ──
