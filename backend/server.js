@@ -758,9 +758,18 @@ app.get('/api/users', requireRole('admin'), (req, res) => {
 });
 
 app.post('/api/users', requireRole('admin'), async (req, res) => {
-  const { nik, nama, username, password, role, chat_id } = req.body;
-  if (!nik || !nama || !username || !password || !['admin','validator','teknisi'].includes(role))
-    return res.status(400).json({ error: 'Data tidak lengkap / role tidak valid' });
+  const nik = (req.body.nik || '').trim();
+  const nama = (req.body.nama || '').trim();
+  const username = (req.body.username || '').trim();
+  const role = (req.body.role || '').trim();
+  const password = req.body.password || '';
+  const chat_id = req.body.chat_id != null ? String(req.body.chat_id).trim() : null;
+  if (!nik) return res.status(400).json({ error: 'NIK wajib diisi' });
+  if (!nama) return res.status(400).json({ error: 'Nama wajib diisi' });
+  if (!username) return res.status(400).json({ error: 'Username wajib diisi' });
+  if (!password) return res.status(400).json({ error: 'Password wajib diisi saat membuat akun' });
+  if (!['admin','validator','teknisi'].includes(role))
+    return res.status(400).json({ error: 'Role tidak valid' });
   try {
     const r = await db.runP(
       `INSERT INTO users (nik, nama, username, password, role, chat_id, login_token) VALUES (?,?,?,?,?,?,?)`,

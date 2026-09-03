@@ -798,6 +798,10 @@ let allUsers = [];
 let editUserId = null;
 async function saveUser() {
   const id = editUserId;
+  const pass = document.getElementById('u-password').value;
+  if (!id && !pass.trim()) {
+    return alert('Password wajib diisi saat membuat akun. Silakan isi password-nya.');
+  }
   const payload = {
     nik: document.getElementById('u-nik').value.trim(),
     nama: document.getElementById('u-nama').value.trim(),
@@ -805,7 +809,6 @@ async function saveUser() {
     role: document.getElementById('u-role').value,
     chat_id: document.getElementById('u-chat').value.trim() || null
   };
-  const pass = document.getElementById('u-password').value;
   if (pass) payload.password = pass;
   const url = id ? `${API}/users/${id}` : `${API}/users`;
   const method = id ? 'PATCH' : 'POST';
