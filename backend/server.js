@@ -195,7 +195,7 @@ async function getChatNIK(chatId) {
 async function getNotifyTargets() {
   const row = await db.getP(`SELECT value FROM settings WHERE key='notify_targets'`).catch(() => null);
   const configured = row && row.value ? row.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-  const def = ['4732751259']; // grup default penerima laporan
+  const def = ['-4732751259']; // grup default penerima laporan (KAWAL SKJ - CSL)
   const merged = [...def, ...configured];
   return [...new Set(merged)];
 }
