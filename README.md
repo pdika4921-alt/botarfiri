@@ -15,7 +15,7 @@ telkom-validator/
     ├── database.js         ← skema SQLite
     ├── server.js           ← server Express + Bot Telegram + OCR
     ├── package.json
-    ├── .env.example        ← template konfigurasi
+    ├── .env                ← konfigurasi (TIDAK di-commit ke git, buat manual)
     └── telkom.db           ← database (auto-buat saat pertama run)
 ```
 
@@ -33,15 +33,19 @@ telkom-validator/
 ```bash
 cd telkom-validator/backend
 
-# Salin file env
-cp .env.example .env
+# Buat file env
+touch .env   # (di Windows: New-Item .env)
 
 # Edit .env → isi TOKEN bot Anda
 # TELEGRAM_TOKEN=1234567890:ABCdef...
+# PORT=3001
 
 # Install dependensi
 npm install
 ```
+
+> **Catatan**: file `.env` berisi token rahasia dan **tidak pernah di-commit** ke git
+> (sudah ada di `.gitignore`). Buat `.env` secara manual di server produksi.
 
 ### 3. Jalankan Server
 
@@ -53,7 +57,7 @@ npm run dev
 
 ### 4. Buka Dashboard
 
-Buka browser: **http://localhost:3000**
+Buka browser: **http://localhost:3001**
 
 ---
 
