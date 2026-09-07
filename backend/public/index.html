@@ -289,6 +289,7 @@
       <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto S-Clamp Tiang</label><input type="file" id="ef-sclamp" accept=".jpg,.jpeg,.png"></div>
       <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto IKR</label><input type="file" id="ef-ikr" accept=".jpg,.jpeg,.png"></div>
       <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Belakang SN ONT</label><input type="file" id="ef-belsn" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Panjang DC</label><input type="file" id="ef-pdc" accept=".jpg,.jpeg,.png"></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px">
       <button class="btn btn-blue" onclick="saveEditBtn()">Simpan Perubahan</button>
@@ -557,6 +558,7 @@ async function openDetail(id, focus) {
     ['No. Voice', j.no_voice], ['Datek ODP', j.datek_odp], ['Port ODP', j.port_odp],
     ['SN ODP', j.sn_odp || (j.sn_issue ? '⚠ perlu cek manual' : '')],
     ['SN DC', j.sn_dc || (j.sn_issue ? '⚠ perlu cek manual' : '')],
+    ['SN ONT', j.sn_ont || ''],
     ['Valins ID', j.valins_id], ['P. DC', j.p_dc],
     ['Lokasi Pelanggan', j.lokasi_pelanggan], ['Lokasi ODP', j.lokasi_odp],
     ['Validator', j.reviewed_by || '-'], ['Divalidasi', j.reviewed_at || '-']
@@ -599,7 +601,7 @@ async function openDetail(id, focus) {
       </div>`;
   }
 
-  const photos = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup']]
+  const photos = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup'],['foto_rumah','Foto Rumah'],['foto_p_dc','Foto Panjang DC']]
     .filter(([k]) => j[k]).map(([k,l]) => `<div style="text-align:center"><img src="/uploads/${j[k]}" onclick="lightbox('/uploads/${j[k]}')" style="width:100%;max-width:220px;border-radius:10px;border:1px solid var(--line);cursor:zoom-in"><div style="font-size:.7rem;color:var(--muted);margin-top:4px">${l}</div></div>`).join('');
 
   document.getElementById('modal-body').innerHTML = `
@@ -660,17 +662,18 @@ async function openEditModal(id) {
     ['nama','Nama Teknisi'],['wonum','WONUM'],['sc','SC'],['sto','STO'],
     ['layanan','Layanan'],['no_internet','No. Internet'],['no_voice','No. Voice'],
     ['datek_odp','Datek ODP'],['port_odp','Port ODP'],['valins_id','Valins ID'],
-    ['p_dc','P. DC'],['lokasi_pelanggan','Lokasi Pelanggan'],['lokasi_odp','Lokasi ODP']
+    ['p_dc','P. DC'],['sn_ont','SN ONT'],
+    ['lokasi_pelanggan','Lokasi Pelanggan'],['lokasi_odp','Lokasi ODP']
   ];
   document.getElementById('edit-fields').innerHTML = fields.map(([k,l]) => `
     <div class="detail-item"><div class="key">${l}</div>
       <input class="ef" data-k="${k}" value="${(j[k]||'').replace(/"/g,'&quot;')}" style="width:100%;margin-top:3px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px">
     </div>`).join('');
 
-  const photov = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup']]
+  const photov = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup'],['foto_rumah','Foto Rumah'],['foto_p_dc','Foto Panjang DC']]
     .filter(([k]) => j[k]).map(([k,l]) => `<img src="/uploads/${j[k]}" title="${l}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line)" onclick="lightbox('/uploads/${j[k]}')">`).join('');
   document.getElementById('edit-photos').innerHTML = photov || '<span style="color:var(--muted)">Belum ada foto</span>';
-  ['ef-buka','ef-tutup','ef-redaman','ef-clamp','ef-sclamp','ef-ikr','ef-belsn'].forEach(id => { document.getElementById(id).value = ''; });
+  ['ef-buka','ef-tutup','ef-redaman','ef-clamp','ef-sclamp','ef-ikr','ef-belsn','ef-pdc'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('edit-modal-bg').classList.add('open');
 }
 function closeEditModal() {
@@ -705,7 +708,8 @@ async function uploadEditPhotos() {
   const fd = new FormData();
   const PHOTO_INPUTS = {
     'ef-buka':'foto_odp_buka','ef-tutup':'foto_odp_tutup','ef-redaman':'foto_redaman_odp',
-    'ef-clamp':'foto_clamp_hook','ef-sclamp':'foto_sclamp_tiang','ef-ikr':'foto_ikr','ef-belsn':'foto_belakang_sn'
+    'ef-clamp':'foto_clamp_hook','ef-sclamp':'foto_sclamp_tiang','ef-ikr':'foto_ikr',
+    'ef-belsn':'foto_belakang_sn','ef-pdc':'foto_p_dc'
   };
   const okExt = (n) => /\.(jpe?g|png)$/i.test(n);
   let count = 0;

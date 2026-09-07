@@ -99,7 +99,7 @@ async function runOCR(imagePath) {
   let worker;
   try {
     worker = await createWorker(['ind', 'eng'], 1, { cachePath: OCR_CACHE, logger: () => {} });
-    const { data: { text } } = await worker.recognize(imagePath);
+    const { data: { text } } = await worker.recognize(imagePath, { rotateAuto: true });
     return (text || '').trim();
   } catch (e) {
     console.error('⚠️ OCR gagal:', e.message);
@@ -113,8 +113,8 @@ async function runOCR(imagePath) {
 function extractSN(text) {
   if (!text) return '';
   const clean = String(text).replace(/\s+/g, ' ').replace(/\|/g, 'I').trim();
-  // 1) SN setelah penanda (SN, S/N, No Seri, Nomer Seri, Serial)
-  const m = clean.match(/(?:SN|S\/N|SNR|SERI|NOMER\s*SERI|NO\.?\s*SERI|SERIAL|NO\.?\s*SN)\s*[:=.\-]?\s*([A-Z0-9][A-Z0-9\-]{5,})/i);
+  // 1) SN setelah penanda (SN, S/N, No Seri, Nomer Seri, Serial, ONT SN, SN ONT)
+  const m = clean.match(/(?:SN|S\/N|SNR|SERI|NOMER\s*SERI|NO\.?\s*SERI|SERIAL|NO\.?\s*SN|ONT\s*SN|SN\s*ONT)\s*[:=.\-]?\s*([A-Z0-9][A-Z0-9\-]{5,})/i);
   if (m) return m[1].replace(/\s+/g, '').trim();
   // 2) Format ONT khas: 4 huruf kapital + 6-12 digit (mis HWTC12345678, ALCLF12345678, ZTEGC12345678)
   const m2 = clean.match(/\b([A-Z]{4}\d{6,12})\b/);
@@ -122,9 +122,12 @@ function extractSN(text) {
   // 3) Awalan 3-5 huruf kapital + minimal 6 digit
   const m3 = clean.match(/\b([A-Z]{3,5}\d{6,})\b/);
   if (m3) return m3[1];
-  // 4) run alfanumerik kapital panjang (fallback)
-  const m4 = clean.match(/\b([A-Z0-9]{10,})\b/);
-  return m4 ? m4[1] : '';
+  // 4) Format dengan garis: XXXX-XXXXXX atau XXXX/XXXXXX
+  const m4 = clean.match(/\b([A-Z]{2,6})[\-\/]([A-Z0-9]{4,12})\b/i);
+  if (m4) return (m4[1] + m4[2]).replace(/\s+/g, '');
+  // 5) run alfanumerik kapital panjang (fallback)
+  const m5 = clean.match(/\b([A-Z0-9]{10,})\b/);
+  return m5 ? m5[1] : '';
 }
 
 // ── Download foto dari Telegram ──────────────────────────
@@ -241,7 +244,8 @@ const REPORT_FIELDS = [
   ['foto_redaman_odp', 'Redaman ODP'], ['foto_clamp_hook', 'Clamp Hook'],
   ['foto_sclamp_tiang', 'S-Clamp Tiang'], ['foto_ikr', 'IKR'],
   ['foto_belakang_sn', 'Belakang SN ONT'], ['foto_odp_buka', 'ODP Terbuka'],
-  ['foto_odp_tutup', 'ODP Tertutup'], ['foto_rumah', 'Foto Rumah']
+  ['foto_odp_tutup', 'ODP Tertutup'], ['foto_rumah', 'Foto Rumah'],
+  ['foto_p_dc', 'Foto Panjang DC']
 ];
 async function sendJobReport(job) {
   if (!bot) return;
@@ -271,6 +275,7 @@ async function sendJobReport(job) {
     `🏢 STO: ${job.sto || '-'} | 📦 Layanan: ${job.layanan || '-'}\n` +
     (job.sn_odp ? `🆔 SN ODP: ${job.sn_odp}\n` : '') +
     (job.sn_dc ? `🆔 SN DC: ${job.sn_dc}\n` : '') +
+    (job.sn_ont ? `🆔 SN ONT: ${job.sn_ont}\n` : '') +
     (job.sn_issue ? `⚠️ *SN belum jelas terbaca* — perlu cek manual.\n` : '') +
     `🔄 Status: *${job.status || 'PENDING'}*`;
 
@@ -298,8 +303,10 @@ if (bot) {
   const STEPS = [
     { key: 'wonum',            label: 'WONUM',                      type: 'text',     prompt: '🎫 Masukkan *WONUM*:' },
     { key: 'sc',               label: 'SC',                         type: 'text',     prompt: '🔢 Masukkan *SC*:' },
-    { key: 'ocr_qr_odp',       label: 'Foto QR ODP',                type: 'photo',    store: 'foto_qr_odp',  ocr: 'ocr_qr_odp',  sn: 'sn_odp',  prompt: '📷 Kirim *FOTO QR ODP* (pastikan teks *SN* di bawah QR terbaca jelas).\n(Bot otomatis membaca SN)' },
-    { key: 'ocr_qr_dc',        label: 'Foto QR DC',                 type: 'photo',    store: 'foto_qr_dc',   ocr: 'ocr_qr_dc',   sn: 'sn_dc',   prompt: '📷 Kirim *FOTO QR DC* (pastikan teks *SN* di bawah QR terbaca jelas).\n(Bot otomatis membaca SN)' },
+    { key: 'ocr_qr_odp',       label: 'Foto QR ODP',                type: 'photo',    store: 'foto_qr_odp',  ocr: 'ocr_qr_odp',  sn: 'sn_odp',  prompt: '📷 Kirim *FOTO QR ODP* (pastikan teks *SN* di bawah QR terbaca jelas).\n(Bot otomatis membaca SN, atau input manual setelah foto)' },
+    { key: 'manual_sn_odp',    label: 'SN ODP Manual (jika OCR gagal)', type: 'text', skippable: true, prompt: '📝 *SN ODP* dari OCR: _(otomatis terisi jika terbaca)_\nJika SN *belum jelas*, ketik SN-nya secara manual.\nKetik /skip jika OCR sudah benar.' },
+    { key: 'ocr_qr_dc',        label: 'Foto QR DC',                 type: 'photo',    store: 'foto_qr_dc',   ocr: 'ocr_qr_dc',   sn: 'sn_dc',   prompt: '📷 Kirim *FOTO QR DC* (pastikan teks *SN* di bawah QR terbaca jelas).\n(Bot otomatis membaca SN, atau input manual setelah foto)' },
+    { key: 'manual_sn_dc',     label: 'SN DC Manual (jika OCR gagal)', type: 'text', skippable: true, prompt: '📝 *SN DC* dari OCR: _(otomatis terisi jika terbaca)_\nJika SN *belum jelas*, ketik SN-nya secara manual.\nKetik /skip jika OCR sudah benar.' },
     { key: 'sto',              label: 'STO',                        type: 'choice',   options: ['SKJ', 'CSL'], prompt: '🏢 Pilih *STO*:' },
     { key: 'layanan',          label: 'Jumlah Layanan',             type: 'choice',   options: ['1P', '2P', '3P'], prompt: '📦 Pilih *JUMLAH LAYANAN*:' },
     { key: 'no_internet',      label: 'No. Internet',               type: 'text',     prompt: '🌐 Masukkan *NO. INTERNET*:' },
@@ -318,6 +325,8 @@ if (bot) {
     { key: 'foto_odp_buka',    label: 'Foto ODP Terbuka',           type: 'photo',    store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
     { key: 'foto_odp_tutup',   label: 'Foto ODP Tertutup',          type: 'photo',    store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
     { key: 'foto_rumah',       label: 'Foto Rumah',                 type: 'photo',    store: 'foto_rumah', prompt: '🏠 Kirim *FOTO RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
+    { key: 'foto_p_dc',        label: 'Foto Panjang DC',            type: 'photo',    store: 'foto_p_dc', prompt: '📏 Kirim *FOTO PANJANG DC* (bukti pengukuran):\n(Format JPG/PNG)' },
+    { key: 'sn_ont',           label: 'SN ONT',                     type: 'text',     prompt: '🆔 Masukkan *SN ONT* (Serial Number):\n(Ketik manual dari label ONT)' },
   ];
 
   function buildKeyboard(step) {
@@ -387,6 +396,8 @@ if (bot) {
         `❌ NIK *${nik}* tidak terdaftar sebagai teknisi.\nHubungi admin untuk didaftarkan.`,
         { parse_mode: 'Markdown' });
     await bindChat(nik, chatId);
+    // Auto-save chat_id ke users table
+    await db.runP('UPDATE users SET chat_id=? WHERE nik=? AND (chat_id IS NULL OR chat_id<>)', [chatId, nik]).catch(() => {});
     return bot.sendMessage(chatId,
       `✅ Login berhasil.\n` +
       `👤 NIK: *${user.nik}*\n🧑‍🔧 Nama: *${user.nama}*\n\n` +
@@ -489,6 +500,15 @@ if (bot) {
     const s = sessions.get(chatId);
     if (!s) return;
     s.step += 1;
+    // Jika step berikutnya adalah manual SN dan OCR sudah berhasil, skip otomatis
+    if (s.step < STEPS.length) {
+      const nextStep = STEPS[s.step];
+      if (nextStep.key === 'manual_sn_odp' && s.data.sn_odp) {
+        s.step += 1; // skip manual step, OCR sudah dapat SN
+      } else if (nextStep.key === 'manual_sn_dc' && s.data.sn_dc) {
+        s.step += 1; // skip manual step, OCR sudah dapat SN
+      }
+    }
     if (s.step >= STEPS.length) return finish(chatId);
     sendStep(chatId);
   }
@@ -503,15 +523,17 @@ if (bot) {
         datek_odp,port_odp,valins_id,p_dc,lokasi_pelanggan,lokasi_odp,
         ocr_qr_odp,ocr_qr_dc,foto_qr_odp,foto_qr_dc,foto_odp_buka,foto_odp_tutup,
         foto_redaman_odp,foto_clamp_hook,foto_sclamp_tiang,foto_ikr,foto_belakang_sn,
-        foto_rumah,sn_odp,sn_dc,sn_issue)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        foto_rumah,sn_odp,sn_dc,sn_issue,sn_ont,foto_p_dc,manual_sn_odp,manual_sn_dc)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [d.nik, d.nama, d.wonum, d.sc, d.sto, d.layanan,
        d.no_internet, d.no_voice, d.datek_odp, d.port_odp,
        d.valins_id, d.p_dc, d.lokasi_pelanggan, d.lokasi_odp,
        d.ocr_qr_odp, d.ocr_qr_dc, d.foto_qr_odp, d.foto_qr_dc,
        d.foto_odp_buka, d.foto_odp_tutup,
        d.foto_redaman_odp, d.foto_clamp_hook, d.foto_sclamp_tiang, d.foto_ikr, d.foto_belakang_sn,
-       d.foto_rumah, d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0]
+       d.foto_rumah, d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0,
+       d.sn_ont || null, d.foto_p_dc || null,
+       d.manual_sn_odp || null, d.manual_sn_dc || null]
     ).then((r) => {
       sessions.delete(chatId);
       // buat objek job lengkap untuk laporan ke target
@@ -520,8 +542,12 @@ if (bot) {
         foto_odp_buka: d.foto_odp_buka, foto_odp_tutup: d.foto_odp_tutup,
         foto_redaman_odp: d.foto_redaman_odp, foto_clamp_hook: d.foto_clamp_hook,
         foto_sclamp_tiang: d.foto_sclamp_tiang, foto_ikr: d.foto_ikr, foto_belakang_sn: d.foto_belakang_sn,
-        foto_rumah: d.foto_rumah,
-        sn_odp: d.sn_odp || null, sn_dc: d.sn_dc || null, sn_issue: d.sn_issue || 0 };
+        foto_rumah: d.foto_rumah, foto_p_dc: d.foto_p_dc,
+        sn_odp: d.manual_sn_odp || d.sn_odp || null,
+        sn_dc: d.manual_sn_dc || d.sn_dc || null,
+        sn_ont: d.sn_ont || null,
+        sn_issue: d.sn_issue || 0,
+        manual_sn_odp: d.manual_sn_odp || null, manual_sn_dc: d.manual_sn_dc || null };
       sendJobReport(job);
       bot.sendMessage(chatId,
         `✅ *Berhasil! Laporan tersimpan*\n` +
@@ -564,10 +590,21 @@ if (bot) {
       if (!user || user.role !== 'teknisi')
         return bot.sendMessage(chatId, `❌ NIK *${nik}* tidak terdaftar sebagai teknisi.`, { parse_mode: 'Markdown' });
       await bindChat(nik, chatId);
+      // Auto-save chat_id ke users table
+      await db.runP('UPDATE users SET chat_id=? WHERE nik=? AND (chat_id IS NULL OR chat_id<>)', [chatId, nik]).catch(() => {});
       return bot.sendMessage(chatId, `✅ Chat ini tertaut dengan NIK *${nik}*.\nRevisi pekerjaan akan masuk ke chat ini.`, { parse_mode: 'Markdown' });
     }
 
     if (text === '/start' || text === '/help') {
+      // Auto-capture: cek apakah chat_id sudah terdaftar di users
+      const chatUser = await db.getP('SELECT * FROM users WHERE chat_id=?', [chatId]).catch(() => null);
+      if (chatUser && chatUser.nik) {
+        // Auto-link ke user_chats
+        await bindChat(chatUser.nik, chatId);
+        return showMenu(chatId,
+          `👋 Selamat datang kembali, *${chatUser.nama}*! Anda sudah login.`, true);
+      }
+      // Cek juga di user_chats
       const linkedNik = await getChatNIK(chatId);
       const who = linkedNik ? await db.getP('SELECT * FROM users WHERE nik=?', [linkedNik]).catch(() => null) : null;
       const logged = who && who.role === 'teknisi';
@@ -629,6 +666,14 @@ if (bot) {
       }
       if (!text) return bot.sendMessage(chatId, '⚠️ Kirim teks yang diminta, atau /batal untuk membatalkan.');
       s.data[step.key] = text;
+      // Override SN dari OCR jika input manual SN ODP/DC
+      if (step.key === 'manual_sn_odp' && text) {
+        s.data.sn_odp = text;
+        s.data.sn_issue = 0;
+      } else if (step.key === 'manual_sn_dc' && text) {
+        s.data.sn_dc = text;
+        s.data.sn_issue = 0;
+      }
       advance(chatId);
     }
   });
@@ -924,7 +969,7 @@ app.post('/api/jobs/:id/ack', requireRole('teknisi'), async (req, res) => {
 
 // ── Teknisi: edit data (hanya miliknya, status REJECT) ───
 const EDITABLE_FIELDS = ['nama','wonum','sc','sto','layanan','no_internet','no_voice',
-  'datek_odp','port_odp','valins_id','p_dc','lokasi_pelanggan','lokasi_odp'];
+  'datek_odp','port_odp','valins_id','p_dc','lokasi_pelanggan','lokasi_odp','sn_ont'];
 
 app.patch('/api/jobs/:id', requireRole('teknisi'), async (req, res) => {
   try {
@@ -984,7 +1029,7 @@ function toCSV(rows) {
     'datek_odp','port_odp','valins_id','p_dc','lokasi_pelanggan','lokasi_odp',
     'ocr_qr_odp','ocr_qr_dc','foto_qr_odp','foto_qr_dc','foto_odp_buka','foto_odp_tutup',
     'foto_redaman_odp','foto_clamp_hook','foto_sclamp_tiang','foto_ikr','foto_belakang_sn',
-    'sn_odp','sn_dc','sn_issue',
+    'foto_rumah','foto_p_dc','sn_odp','sn_dc','sn_ont','sn_issue','manual_sn_odp','manual_sn_dc',
     'status','review_cat','review_note','reviewed_by','reviewed_at','created_at'];
   const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const head = cols.map(c => esc(c)).join(',');
@@ -1028,7 +1073,7 @@ app.get('/api/stats', requireAuth, (req, res) => {
 
 // ── Upload foto dari web ─────────────────────────────────
 const PHOTO_FIELDS = ['foto_qr_odp', 'foto_qr_dc', 'foto_odp_buka', 'foto_odp_tutup',
-  'foto_redaman_odp', 'foto_clamp_hook', 'foto_sclamp_tiang', 'foto_ikr', 'foto_belakang_sn'];
+  'foto_redaman_odp', 'foto_clamp_hook', 'foto_sclamp_tiang', 'foto_ikr', 'foto_belakang_sn', 'foto_p_dc'];
 app.post('/api/jobs/:id/upload', requireAuth, upload.fields(
   PHOTO_FIELDS.map(n => ({ name: n, maxCount: 1 }))
 ), async (req, res) => {
