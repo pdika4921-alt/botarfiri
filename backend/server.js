@@ -245,7 +245,8 @@ const REPORT_FIELDS = [
   ['foto_ikr', 'IKR'], ['foto_sn_ont_terpasang', 'SN ONT Terpasang'],
   ['foto_sn_stb', 'SN STB'], ['foto_sn_orbit', 'SN ORBIT'],
   ['foto_sn_mesh', 'SN MESH WIFI'], ['foto_belakang_ont', 'Belakang ONT'],
-  ['foto_rumah', 'Rumah Pelanggan'],
+  ['foto_rumah', 'Rumah Pelanggan'], ['foto_redaman', 'Foto Redaman'],
+  ['foto_bangunan_plg', 'Bangunan/Rumah Pelanggan'],
   ['foto_sn_master_ap', 'SN Master AP'], ['foto_sn_slave_ap1', 'SN Slave AP 1'],
   ['foto_sn_slave_ap2', 'SN Slave AP 2'], ['foto_sn_slave_ap3', 'SN Slave AP 3'],
   ['foto_sn_slave_ap4', 'SN Slave AP 4'], ['foto_prekso', 'Instalasi Prekso'],
@@ -351,14 +352,16 @@ if (bot) {
         { key: 'port_odp', label: 'Port ODP', type: 'text', prompt: '🔌 Masukkan *PORT ODP*:' },
         { key: 'material_dc', label: 'Material DC/Precon (M)', type: 'text', prompt: '📏 Masukkan *MATERIAL DC/PRECON (M)*:' },
         { key: 'lokasi_odp', label: 'Shareloc ODP', type: 'location', prompt: '📍 *SHARE LOCATION ODP*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'foto_redaman', label: 'Foto Redaman', type: 'photo', store: 'foto_redaman', prompt: '📷 Kirim *FOTO REDAMAN*:\n(Format JPG/PNG)' },
         { key: 'barcode_dc', label: 'Barcode DC', type: 'text', prompt: '📊 Masukkan *BARCODE DC*:' },
         { key: 'barcode_odp', label: 'Barcode ODP', type: 'text', prompt: '📊 Masukkan *BARCODE ODP*:' },
         { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', type: 'location', prompt: '📍 *SHARE LOCATION PELANGGAN*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
         { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', type: 'photo', store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BERSIH & BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
         { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', type: 'photo', store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
         { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', type: 'photo', store: 'foto_sclamp_tiang', prompt: '📷 Kirim *FOTO S-CLAMP TIANG TERPASANG PADA CLAMPRING & PAKAI TIES CABLE*:\n(Format JPG/PNG)' },
-        { key: 'valins_id', label: 'Valins ID', type: 'text', prompt: '🆔 Masukkan *VALINS ID*:' },
         { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
+        { key: 'valins_id', label: 'Valins ID', type: 'text', prompt: '🆔 Masukkan *VALINS ID*:' },
+        { key: 'foto_bangunan_plg', label: 'Foto Bangunan/Rumah Pelanggan', type: 'photo', store: 'foto_bangunan_plg', prompt: '📷 Kirim *FOTO BANGUNAN/RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
         { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', type: 'photo', store: 'foto_clamp_hook', prompt: '📷 Kirim *FOTO CLAMPHOOK*:\n(Format JPG/PNG)' },
         { key: 'foto_ikr', label: 'Foto IKR', type: 'photo', store: 'foto_ikr', prompt: '📷 Kirim *FOTO IKR*:\n(Format JPG/PNG)' },
         { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang Kabel DC', type: 'photo', store: 'foto_sn_ont_terpasang', prompt: '📷 Kirim *FOTO SN ONT TERPASANG KABEL DC*:\n(Format JPG/PNG)' }
@@ -731,8 +734,9 @@ if (bot) {
         foto_speedtest,foto_dengan_plg,foto_surat_tugas,foto_ba,
         panjang_prekso,panjang_kabel_lan,jumlah_roset,jumlah_splitter,
         wall_throughging,clip,atb,jam_datang,jam_selesai,
+        foto_redaman,foto_bangunan_plg,
         sn_odp,sn_dc,sn_issue)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [d.nik, d.nama, d.wonum, d.sc, d.sto, d.layanan,
        d.no_internet || null, d.no_voice || null,
        d.label_odp || null, d.port_odp || null, d.material_dc || null,
@@ -756,6 +760,7 @@ if (bot) {
        d.jumlah_roset || null, d.jumlah_splitter || null,
        d.wall_throughging || null, d.clip || null, d.atb || null,
        d.jam_datang || null, d.jam_selesai || null,
+       d.foto_redaman || null, d.foto_bangunan_plg || null,
        d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0]
     ).then((r) => {
       sessions.delete(chatId);
@@ -1299,6 +1304,7 @@ function toCSV(rows) {
     'foto_rumah','foto_sn_master_ap','foto_sn_slave_ap1','foto_sn_slave_ap2',
     'foto_sn_slave_ap3','foto_sn_slave_ap4','foto_prekso','foto_pengeleman',
     'foto_speedtest','foto_dengan_plg','foto_surat_tugas','foto_ba',
+    'foto_redaman','foto_bangunan_plg',
     'panjang_prekso','panjang_kabel_lan','jumlah_roset','jumlah_splitter',
     'wall_throughging','clip','atb','jam_datang','jam_selesai',
     'sn_odp','sn_dc','sn_issue',
@@ -1348,7 +1354,8 @@ const PHOTO_FIELDS = ['foto_odp_buka', 'foto_odp_tutup', 'foto_sclamp_tiang', 'f
   'foto_sn_ont_terpasang', 'foto_sn_stb', 'foto_sn_orbit', 'foto_sn_mesh', 'foto_belakang_ont',
   'foto_rumah', 'foto_sn_master_ap', 'foto_sn_slave_ap1', 'foto_sn_slave_ap2',
   'foto_sn_slave_ap3', 'foto_sn_slave_ap4', 'foto_prekso', 'foto_pengeleman',
-  'foto_speedtest', 'foto_dengan_plg', 'foto_surat_tugas', 'foto_ba'];
+  'foto_speedtest', 'foto_dengan_plg', 'foto_surat_tugas', 'foto_ba',
+  'foto_redaman', 'foto_bangunan_plg'];
 app.post('/api/jobs/:id/upload', requireAuth, upload.fields(
   PHOTO_FIELDS.map(n => ({ name: n, maxCount: 1 }))
 ), async (req, res) => {
