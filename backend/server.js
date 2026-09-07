@@ -364,6 +364,13 @@ if (bot) {
 
   // ── Menu tombol inline utama ─────────────────────────────
   const pendingInput = new Map(); // chatId -> 'nik' | 'wonum' (menunggu ketikan ulang)
+  const regSessions = new Map(); // chatId -> { step, data } (registrasi)
+  const REG_STEPS = [
+    { key: 'nik',      label: 'NIK',        prompt: '🪪 Masukkan *NIK* Anda:' },
+    { key: 'nama',     label: 'Nama Lengkap', prompt: '🧑 Masukkan *NAMA LENGKAP* Anda:' },
+    { key: 'username', label: 'Username',    prompt: '🔤 Masukkan *USERNAME* (untuk login):' },
+    { key: 'password', label: 'Password',    prompt: '🔒 Masukkan *PASSWORD*:' },
+  ];
   const menuMarkup = (logged) => {
     const rows = logged
       ? [
@@ -373,6 +380,7 @@ if (bot) {
           [{ text: '🚪 Logout', callback_data: 'MENU|logout' }]
         ]
       : [
+          [{ text: '📝 Daftar Akun Baru', callback_data: 'MENU|register' }],
           [{ text: '🔐 Login dengan NIK', callback_data: 'MENU|login' }],
           [{ text: '➕ Input Pekerjaan Baru', callback_data: 'MENU|baru' }],
           [{ text: '🔍 Cek Status', callback_data: 'MENU|status' }],
@@ -419,6 +427,66 @@ if (bot) {
         { parse_mode: 'Markdown' }
       );
     });
+  }
+
+  // ── Registrasi Teknisi Baru ─────────────────────────────
+  function regKeyboard(step) {
+    const rows = [];
+    const nav = [];
+    if (step > 0) nav.push({ text: '⏪ Kembali', callback_data: 'REG|back' });
+    nav.push({ text: '❌ Batal', callback_data: 'REG|cancel' });
+    if (nav.length) rows.push(nav);
+    return { reply_markup: { inline_keyboard: rows } };
+  }
+  async function sendRegStep(chatId) {
+    const s = regSessions.get(chatId);
+    if (!s) return;
+    const step = REG_STEPS[s.step];
+    await bot.sendMessage(chatId, `📝 *Daftar Akun — Langkah ${s.step + 1}/${REG_STEPS.length}*\n──────────────────\n${step.prompt}`, { parse_mode: 'Markdown', ...regKeyboard(s.step) });
+  }
+  async function startRegister(chatId) {
+    // Cek apakah sudah punya akun
+    const existing = await db.getP('SELECT * FROM users WHERE chat_id=?', [chatId]).catch(() => null);
+    if (existing) {
+      return bot.sendMessage(chatId, `❌ Anda sudah punya akun (*${existing.username}*).\nGunakan *Login* untuk masuk.`, { parse_mode: 'Markdown' });
+    }
+    regSessions.set(chatId, { step: 0, data: {} });
+    await bot.sendMessage(chatId, `📝 *Registrasi Akun Teknisi*\nSilakan isi data diri Anda:`, { parse_mode: 'Markdown' });
+    return sendRegStep(chatId);
+  }
+  async function finishRegister(chatId) {
+    const s = regSessions.get(chatId);
+    const d = s.data;
+    // Cek NIK sudah terdaftar
+    const existNik = await db.getP('SELECT id FROM users WHERE nik=?', [d.nik]).catch(() => null);
+    if (existNik) {
+      regSessions.delete(chatId);
+      return bot.sendMessage(chatId, `❌ NIK *${d.nik}* sudah terdaftar.\nSilakan Login atau hubungi admin.`, { parse_mode: 'Markdown', ...menuMarkup(false) });
+    }
+    // Cek username sudah terdaftar
+    const existUser = await db.getP('SELECT id FROM users WHERE username=?', [d.username]).catch(() => null);
+    if (existUser) {
+      regSessions.delete(chatId);
+      return bot.sendMessage(chatId, `❌ Username *${d.username}* sudah dipakai.\nSilakan pilih username lain.`, { parse_mode: 'Markdown', ...menuMarkup(false) });
+    }
+    try {
+      const token = genToken();
+      await db.runP(
+        'INSERT INTO users (nik, nama, username, password, role, chat_id, login_token) VALUES (?,?,?,?,?,?,?)',
+        [d.nik, d.nama, d.username, hashPassword(d.password), 'teknisi', chatId, token]
+      );
+      await bindChat(d.nik, chatId);
+      regSessions.delete(chatId);
+      return bot.sendMessage(chatId,
+        `✅ *Registrasi Berhasil!*\n` +
+        `👤 NIK: *${d.nik}*\n🧑‍🔧 Nama: *${d.nama}*\n🔤 Username: *${d.username}*\n\n` +
+        `Anda sudah login. Pilih menu di bawah:`,
+        { parse_mode: 'Markdown', ...menuMarkup(true) }
+      );
+    } catch (e) {
+      regSessions.delete(chatId);
+      return bot.sendMessage(chatId, '❌ Gagal membuat akun: ' + e.message);
+    }
   }
 
   async function startWizard(chatId) {
@@ -577,6 +645,17 @@ if (bot) {
       if (pending === 'wonum') return doStatus(chatId, text);
     }
 
+    // ── Input registrasi sedang berjalan ──
+    const reg = regSessions.get(chatId);
+    if (reg && text && !text.startsWith('/')) {
+      const step = REG_STEPS[reg.step];
+      if (!text) return bot.sendMessage(chatId, '⚠️ Kirim teks yang diminta, atau /batal untuk membatalkan.');
+      reg.data[step.key] = text;
+      reg.step += 1;
+      if (reg.step >= REG_STEPS.length) return finishRegister(chatId);
+      return sendRegStep(chatId);
+    }
+
     // ── Login pakai NIK (harus terdaftar sebagai teknisi) ──
     if (text.startsWith('/login')) {
       return doLogin(chatId, (text.split(' ')[1] || '').trim());
@@ -629,6 +708,7 @@ if (bot) {
 
     if (text === '/batal') {
       if (sessions.has(chatId)) { sessions.delete(chatId); return bot.sendMessage(chatId, '🚫 Input dibatalkan.'); }
+      if (regSessions.has(chatId)) { regSessions.delete(chatId); return bot.sendMessage(chatId, '🚫 Registrasi dibatalkan.'); }
       return bot.sendMessage(chatId, 'Tidak ada input yang sedang berjalan.');
     }
 
@@ -711,6 +791,28 @@ if (bot) {
           ? `🚪 Anda telah logout dari NIK *${nik}*.\nSesi chat ini tidak lagi tertaut.`
           : `ℹ️ Anda belum login.\nGunakan *Login dengan NIK* untuk masuk.`,
           { parse_mode: 'Markdown', ...menuMarkup(false) });
+      }
+      if (act === 'register') {
+        await bot.answerCallbackQuery(cb.id, { text: 'Memulai registrasi...' });
+        return startRegister(chatId);
+      }
+      return;
+    }
+
+    // Tombol navigasi registrasi
+    if (cb.data && cb.data.startsWith('REG|')) {
+      await bot.answerCallbackQuery(cb.id);
+      const act = cb.data.split('|')[1];
+      const reg = regSessions.get(chatId);
+      if (act === 'cancel') {
+        regSessions.delete(chatId);
+        return bot.editMessageText('🚫 Registrasi dibatalkan.', { chat_id: chatId, message_id: cb.message.message_id });
+      }
+      if (!reg) return bot.sendMessage(chatId, 'Sesi registrasi tidak aktif. Ketik /start untuk memulai.');
+      if (act === 'back') {
+        if (reg.step === 0) return bot.sendMessage(chatId, '⚠️ Ini langkah pertama, tidak bisa kembali.');
+        reg.step -= 1;
+        return sendRegStep(chatId);
       }
       return;
     }
