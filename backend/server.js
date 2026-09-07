@@ -240,12 +240,18 @@ async function notifyRevision(job) {
 
 // Kirim laporan lengkap (semua foto + ringkasan) ke penerima tambahan
 const REPORT_FIELDS = [
-  ['foto_qr_odp', 'QR ODP'], ['foto_qr_dc', 'QR DC'],
-  ['foto_redaman_odp', 'Redaman ODP'], ['foto_clamp_hook', 'Clamp Hook'],
-  ['foto_sclamp_tiang', 'S-Clamp Tiang'], ['foto_ikr', 'IKR'],
-  ['foto_belakang_sn', 'Belakang SN ONT'], ['foto_odp_buka', 'ODP Terbuka'],
-  ['foto_odp_tutup', 'ODP Tertutup'], ['foto_rumah', 'Foto Rumah'],
-  ['foto_p_dc', 'Foto Panjang DC']
+  ['foto_odp_buka', 'ODP Terbuka'], ['foto_odp_tutup', 'ODP Tertutup'],
+  ['foto_sclamp_tiang', 'S-Clamp Tiang'], ['foto_clamp_hook', 'Clamp Hook'],
+  ['foto_ikr', 'IKR'], ['foto_sn_ont_terpasang', 'SN ONT Terpasang'],
+  ['foto_sn_stb', 'SN STB'], ['foto_sn_orbit', 'SN ORBIT'],
+  ['foto_sn_mesh', 'SN MESH WIFI'], ['foto_belakang_ont', 'Belakang ONT'],
+  ['foto_rumah', 'Rumah Pelanggan'],
+  ['foto_sn_master_ap', 'SN Master AP'], ['foto_sn_slave_ap1', 'SN Slave AP 1'],
+  ['foto_sn_slave_ap2', 'SN Slave AP 2'], ['foto_sn_slave_ap3', 'SN Slave AP 3'],
+  ['foto_sn_slave_ap4', 'SN Slave AP 4'], ['foto_prekso', 'Instalasi Prekso'],
+  ['foto_pengeleman', 'Saat Pengeleman'], ['foto_speedtest', 'Speedtest'],
+  ['foto_dengan_plg', 'Dengan Pelanggan'], ['foto_surat_tugas', 'Surat Tugas'],
+  ['foto_ba', 'BA TTD Pelanggan']
 ];
 async function sendJobReport(job) {
   if (!bot) return;
@@ -273,9 +279,12 @@ async function sendJobReport(job) {
     `🎫 WONUM: ${job.wonum || '-'}\n` +
     `🔢 SC: ${job.sc || '-'}\n` +
     `🏢 STO: ${job.sto || '-'} | 📦 Layanan: ${job.layanan || '-'}\n` +
-    (job.sn_odp ? `🆔 SN ODP: ${job.sn_odp}\n` : '') +
-    (job.sn_dc ? `🆔 SN DC: ${job.sn_dc}\n` : '') +
     (job.sn_ont ? `🆔 SN ONT: ${job.sn_ont}\n` : '') +
+    (job.no_internet ? `🌐 No. Internet: ${job.no_internet}\n` : '') +
+    (job.no_voice ? `☎️ No. Voice: ${job.no_voice}\n` : '') +
+    (job.valins_id ? `🆔 Valins ID: ${job.valins_id}\n` : '') +
+    (job.jam_datang ? `🕐 Jam Datang: ${job.jam_datang}\n` : '') +
+    (job.jam_selesai ? `🕐 Jam Selesai: ${job.jam_selesai}\n` : '') +
     (job.sn_issue ? `⚠️ *SN belum jelas terbaca* — perlu cek manual.\n` : '') +
     `🔄 Status: *${job.status || 'PENDING'}*`;
 
@@ -298,44 +307,168 @@ async function sendJobReport(job) {
 
 // ── Wizard Bot Telegram (tanya-jawab bertahap) ───────────
 if (bot) {
-  const sessions = new Map(); // chatId -> { step, data }
+  const sessions = new Map(); // chatId -> { step, steps, data }
 
-  const STEPS = [
-    { key: 'wonum',            label: 'WONUM',                      type: 'text',     prompt: '🎫 Masukkan *WONUM*:' },
-    { key: 'sc',               label: 'SC',                         type: 'text',     prompt: '🔢 Masukkan *SC*:' },
-    { key: 'ocr_qr_odp',       label: 'Foto QR ODP',                type: 'photo',    store: 'foto_qr_odp',  ocr: 'ocr_qr_odp',  sn: 'sn_odp',  prompt: '📷 Kirim *FOTO QR ODP* (pastikan teks *SN* di bawah QR terbaca jelas).\n(Bot otomatis membaca SN, atau input manual setelah foto)' },
-    { key: 'manual_sn_odp',    label: 'SN ODP Manual (jika OCR gagal)', type: 'text', skippable: true, prompt: '📝 *SN ODP* dari OCR: _(otomatis terisi jika terbaca)_\nJika SN *belum jelas*, ketik SN-nya secara manual.\nKetik /skip jika OCR sudah benar.' },
-    { key: 'ocr_qr_dc',        label: 'Foto QR DC',                 type: 'photo',    store: 'foto_qr_dc',   ocr: 'ocr_qr_dc',   sn: 'sn_dc',   prompt: '📷 Kirim *FOTO QR DC* (pastikan teks *SN* di bawah QR terbaca jelas).\n(Bot otomatis membaca SN, atau input manual setelah foto)' },
-    { key: 'manual_sn_dc',     label: 'SN DC Manual (jika OCR gagal)', type: 'text', skippable: true, prompt: '📝 *SN DC* dari OCR: _(otomatis terisi jika terbaca)_\nJika SN *belum jelas*, ketik SN-nya secara manual.\nKetik /skip jika OCR sudah benar.' },
-    { key: 'sto',              label: 'STO',                        type: 'choice',   options: ['SKJ', 'CSL'], prompt: '🏢 Pilih *STO*:' },
-    { key: 'layanan',          label: 'Jumlah Layanan',             type: 'choice',   options: ['1P', '2P', '3P'], prompt: '📦 Pilih *JUMLAH LAYANAN*:' },
-    { key: 'no_internet',      label: 'No. Internet',               type: 'text',     prompt: '🌐 Masukkan *NO. INTERNET*:' },
-    { key: 'no_voice',         label: 'No. Voice',                  type: 'text',     skippable: true, prompt: '☎️ Masukkan *NO. VOICE* (ketik /skip jika kosong):' },
-    { key: 'datek_odp',        label: 'Datek ODP',                  type: 'text',     prompt: '📅 Masukkan *DATEK ODP*:' },
-    { key: 'port_odp',         label: 'Port ODP',                   type: 'text',     prompt: '🔌 Masukkan *PORT ODP*:' },
-    { key: 'valins_id',        label: 'Valins ID',                  type: 'text',     prompt: '🆔 Masukkan *VALINS ID*:' },
-    { key: 'p_dc',             label: 'Panjang DC',                 type: 'text',     prompt: '📏 Masukkan *P. DC (Panjang DC)*:' },
-    { key: 'lokasi_pelanggan', label: 'Lokasi Pelanggan',           type: 'location', prompt: '📍 *SHARE LOCATION PELANGGAN*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
-    { key: 'lokasi_odp',       label: 'Lokasi ODP',                 type: 'location', prompt: '📍 *SHARE LOCATION ODP*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
-    { key: 'foto_redaman_odp', label: 'Foto Redaman ODP',           type: 'photo',    store: 'foto_redaman_odp', prompt: '📷 Kirim *FOTO REDAMAN ODP*.\n(Format JPG/PNG)' },
-    { key: 'foto_clamp_hook',  label: 'Foto Clamp Hook',            type: 'photo',    store: 'foto_clamp_hook', prompt: '📷 Kirim *FOTO CLAMP HOOK*.\n(Format JPG/PNG)' },
-    { key: 'foto_sclamp_tiang',label: 'Foto S-Clamp Tiang',         type: 'photo',    store: 'foto_sclamp_tiang', prompt: '📷 Kirim *FOTO S-CLAMP TIANG*.\n(Format JPG/PNG)' },
-    { key: 'foto_ikr',         label: 'Foto IKR',                   type: 'photo',    store: 'foto_ikr', prompt: '📷 Kirim *FOTO IKR*.\n(Format JPG/PNG)' },
-    { key: 'foto_belakang_sn', label: 'Foto Belakang SN ONT',       type: 'photo',    store: 'foto_belakang_sn', prompt: '📷 Kirim *FOTO BELAKANG SN ONT*.\n(Format JPG/PNG)' },
-    { key: 'foto_odp_buka',    label: 'Foto ODP Terbuka',           type: 'photo',    store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
-    { key: 'foto_odp_tutup',   label: 'Foto ODP Tertutup',          type: 'photo',    store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
-    { key: 'foto_rumah',       label: 'Foto Rumah',                 type: 'photo',    store: 'foto_rumah', prompt: '🏠 Kirim *FOTO RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
-    { key: 'foto_p_dc',        label: 'Foto Panjang DC',            type: 'photo',    store: 'foto_p_dc', prompt: '📏 Kirim *FOTO PANJANG DC* (bukti pengukuran):\n(Format JPG/PNG)' },
-    { key: 'sn_ont',           label: 'SN ONT',                     type: 'text',     prompt: '🆔 Masukkan *SN ONT* (Serial Number):\n(Ketik manual dari label ONT)' },
+  // ── Definisi Layanan & Kategori ────────────────────────
+  const LAYANAN_OPTIONS = [
+    '1P (INET)', '1P (TELP)', '2P (INET+TLP)', '2P (INET+TV)', '3P',
+    'ASTINET', 'ASTINET with AP', 'WMS', 'WMS with AP',
+    'MO STB', 'MO STB 2ND', 'ORBIT', 'MESH WIFI', 'SMOOA',
+    'MO GANTI ONT', 'FTTR'
   ];
+
+  function getLayananCategory(layanan) {
+    if (['1P (INET)', '1P (TELP)', '2P (INET+TLP)', 'ASTINET', 'WMS'].includes(layanan)) return 'standard';
+    if (['2P (INET+TV)', '3P'].includes(layanan)) return 'tv';
+    if (['ASTINET with AP', 'WMS with AP'].includes(layanan)) return 'ap';
+    if (['MO STB', 'MO STB 2ND'].includes(layanan)) return 'mostb';
+    if (layanan === 'SMOOA') return 'smooa';
+    if (layanan === 'ORBIT') return 'orbit';
+    if (layanan === 'MESH WIFI') return 'mesh';
+    if (layanan === 'MO GANTI ONT') return 'ganti_ont';
+    if (layanan === 'FTTR') return 'fttr';
+    return 'standard';
+  }
+
+  // ── Steps generator berdasarkan layanan ─────────────────
+  function buildSteps(layanan) {
+    const cat = getLayananCategory(layanan);
+    const common = [
+      { key: 'wonum', label: 'WONUM', type: 'text', prompt: '🎫 Masukkan *WONUM*:' },
+      { key: 'sc', label: 'SC', type: 'text', prompt: '🔢 Masukkan *SC*:' },
+      { key: 'sto', label: 'STO', type: 'choice', options: ['SKJ', 'CSL'], prompt: '🏢 Pilih *STO*:' },
+      { key: 'layanan', label: 'Layanan', type: 'choice', options: LAYANAN_OPTIONS, prompt: '📦 Pilih *JENIS LAYANAN*:' },
+    ];
+
+    // Steps spesifik berdasarkan kategori
+    const specific = [];
+
+    if (cat === 'standard' || cat === 'tv' || cat === 'ap') {
+      specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'no_voice', label: 'No. Voice', type: 'text', skippable: true, prompt: '☎️ Masukkan *NO. VOICE* (ketik /skip jika kosong):' },
+        { key: 'label_odp', label: 'Label ODP', type: 'text', prompt: '🏷️ Masukkan *LABEL ODP*:' },
+        { key: 'port_odp', label: 'Port ODP', type: 'text', prompt: '🔌 Masukkan *PORT ODP*:' },
+        { key: 'material_dc', label: 'Material DC/Precon (M)', type: 'text', prompt: '📏 Masukkan *MATERIAL DC/PRECON (M)*:' },
+        { key: 'lokasi_odp', label: 'Shareloc ODP', type: 'location', prompt: '📍 *SHARE LOCATION ODP*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'barcode_dc', label: 'Barcode DC', type: 'text', prompt: '📊 Masukkan *BARCODE DC*:' },
+        { key: 'barcode_odp', label: 'Barcode ODP', type: 'text', prompt: '📊 Masukkan *BARCODE ODP*:' },
+        { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', type: 'location', prompt: '📍 *SHARE LOCATION PELANGGAN*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', type: 'photo', store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BERSIH & BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
+        { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', type: 'photo', store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
+        { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', type: 'photo', store: 'foto_sclamp_tiang', prompt: '📷 Kirim *FOTO S-CLAMP TIANG TERPASANG PADA CLAMPRING & PAKAI TIES CABLE*:\n(Format JPG/PNG)' },
+        { key: 'valins_id', label: 'Valins ID', type: 'text', prompt: '🆔 Masukkan *VALINS ID*:' },
+        { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
+        { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', type: 'photo', store: 'foto_clamp_hook', prompt: '📷 Kirim *FOTO CLAMPHOOK*:\n(Format JPG/PNG)' },
+        { key: 'foto_ikr', label: 'Foto IKR', type: 'photo', store: 'foto_ikr', prompt: '📷 Kirim *FOTO IKR*:\n(Format JPG/PNG)' },
+        { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang Kabel DC', type: 'photo', store: 'foto_sn_ont_terpasang', prompt: '📷 Kirim *FOTO SN ONT TERPASANG KABEL DC*:\n(Format JPG/PNG)' }
+      );
+    }
+
+    if (cat === 'tv') {
+      specific.push(
+        { key: 'sn_stb', label: 'SN STB', type: 'text', prompt: '📺 Masukkan *SN STB*:' },
+        { key: 'foto_sn_stb', label: 'Foto SN STB', type: 'photo', store: 'foto_sn_stb', prompt: '📷 Kirim *FOTO SN STB*:\n(Format JPG/PNG)' }
+      );
+    }
+
+    if (cat === 'ap') {
+      specific.push(
+        { key: 'sn_ap1', label: 'SN AP 1', type: 'text', prompt: '📡 Masukkan *SN AP 1*:' },
+        { key: 'foto_sn_ap1', label: 'Foto SN AP 1', type: 'photo', store: 'foto_sn_ap1', prompt: '📷 Kirim *FOTO SN AP 1*:\n(Format JPG/PNG)' },
+        { key: 'sn_ap2', label: 'SN AP 2 (0 jika hanya 1)', type: 'text', prompt: '📡 Masukkan *SN AP 2* (ketik *0* jika hanya 1 AP):' },
+        { key: 'foto_sn_ap2', label: 'Foto SN AP 2', type: 'photo', store: 'foto_sn_ap2', prompt: '📷 Kirim *FOTO SN AP 2* (kirim foto gelap jika hanya 1 AP):\n(Format JPG/PNG)' },
+        { key: 'sn_ap3', label: 'SN AP 3 (0 jika hanya 2)', type: 'text', prompt: '📡 Masukkan *SN AP 3* (ketik *0* jika hanya 2 AP):' },
+        { key: 'foto_sn_ap3', label: 'Foto SN AP 3', type: 'photo', store: 'foto_sn_ap3', prompt: '📷 Kirim *FOTO SN AP 3* (kirim foto gelap jika hanya 2 AP):\n(Format JPG/PNG)' }
+      );
+    }
+
+    if (cat === 'mostb') {
+      specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'sn_stb', label: 'SN STB', type: 'text', prompt: '📺 Masukkan *SN STB*:' },
+        { key: 'foto_sn_stb', label: 'Foto SN STB', type: 'photo', store: 'foto_sn_stb', prompt: '📷 Kirim *FOTO SN STB*:\n(Format JPG/PNG)' },
+        { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' }
+      );
+    }
+
+    if (cat === 'smooa') {
+      specific.push(
+        { key: 'smooa_nohp', label: 'SMOOA 3 NO.HP', type: 'text', prompt: '📱 Masukkan *SMOOA 3 NO.HP*:' }
+      );
+    }
+
+    if (cat === 'orbit') {
+      specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'no_orbit', label: 'No. ORBIT', type: 'text', prompt: '🛰️ Masukkan *NO. ORBIT*:' },
+        { key: 'sn_orbit', label: 'SN ORBIT', type: 'text', prompt: '🛰️ Masukkan *SN ORBIT*:' },
+        { key: 'foto_sn_orbit', label: 'Foto SN ORBIT', type: 'photo', store: 'foto_sn_orbit', prompt: '📷 Kirim *FOTO SN ORBIT*:\n(Format JPG/PNG)' }
+      );
+    }
+
+    if (cat === 'mesh') {
+      specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'sn_mesh', label: 'SN MESH WIFI', type: 'text', prompt: '📡 Masukkan *SN MESH WIFI*:' },
+        { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
+        { key: 'foto_sn_mesh', label: 'Foto SN MESH WIFI', type: 'photo', store: 'foto_sn_mesh', prompt: '📷 Kirim *FOTO SN MESH WIFI*:\n(Format JPG/PNG)' },
+        { key: 'foto_belakang_ont', label: 'Foto SN ONT', type: 'photo', store: 'foto_belakang_ont', prompt: '📷 Kirim *FOTO SN ONT*:\n(Format JPG/PNG)' }
+      );
+    }
+
+    if (cat === 'ganti_ont') {
+      specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
+        { key: 'foto_belakang_ont', label: 'Foto Belakang ONT', type: 'photo', store: 'foto_belakang_ont', prompt: '📷 Kirim *FOTO BELAKANG ONT*:\n(Format JPG/PNG)' }
+      );
+    }
+
+    if (cat === 'fttr') {
+      specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
+        { key: 'sn_ap1', label: 'SN Master Access Point', type: 'text', prompt: '📡 Masukkan *SN MASTER ACCESS POINT*:' },
+        { key: 'sn_ap2', label: 'SN Slave AP 1', type: 'text', prompt: '📡 Masukkan *SN SLAVE ACCESS POINT 1*:' },
+        { key: 'sn_ap3', label: 'SN Slave AP 2 (0 jika hanya 1)', type: 'text', prompt: '📡 Masukkan *SN SLAVE ACCESS POINT 2* (ketik *0* jika hanya 1):' },
+        { key: 'sn_ap4', label: 'SN Slave AP 3 (0 jika hanya 2)', type: 'text', prompt: '📡 Masukkan *SN SLAVE ACCESS POINT 3* (ketik *0* jika hanya 2):' },
+        { key: 'sn_ap5', label: 'SN Slave AP 4 (0 jika hanya 3)', type: 'text', prompt: '📡 Masukkan *SN SLAVE ACCESS POINT 4* (ketik *0* jika hanya 3):' },
+        { key: 'panjang_prekso', label: 'Panjang Prekso', type: 'choice', options: ['10M', '20M', '30M', '40M', '50M'], prompt: '📏 Pilih *PANJANG PREKSO*:' },
+        { key: 'panjang_kabel_lan', label: 'Panjang Kabel LAN', type: 'text', prompt: '📏 Masukkan *PANJANG KABEL LAN*:' },
+        { key: 'jumlah_roset', label: 'Jumlah Roset (PCS)', type: 'text', prompt: '🔢 Masukkan *JUMLAH ROSET (PCS)*:' },
+        { key: 'jumlah_splitter', label: 'Jumlah Splitter (PCS)', type: 'text', prompt: '🔢 Masukkan *JUMLAH SPLITTER (PCS)*:' },
+        { key: 'wall_throughging', label: 'Wall Througing (PCS)', type: 'text', prompt: '🔢 Masukkan *WALL THROUGING (PCS)*:' },
+        { key: 'clip', label: 'CLIP (PCS)', type: 'text', prompt: '🔢 Masukkan *CLIP (PCS)*:' },
+        { key: 'atb', label: 'ATB (PCS)', type: 'text', prompt: '🔢 Masukkan *ATB (PCS)*:' },
+        { key: 'jam_datang', label: 'Jam Datang', type: 'text', prompt: '🕐 Masukkan *JAM DATANG* (contoh: 08:00):' },
+        { key: 'jam_selesai', label: 'Jam Selesai Instalasi', type: 'text', prompt: '🕐 Masukkan *JAM SELESAI INSTALASI* (contoh: 15:00):' },
+        { key: 'foto_rumah', label: 'Foto Rumah Pelanggan', type: 'photo', store: 'foto_rumah', prompt: '🏠 Kirim *FOTO RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_sn_master_ap', label: 'Foto SN Master AP', type: 'photo', store: 'foto_sn_master_ap', prompt: '📷 Kirim *FOTO SN MASTER ACCESS POINT*:\n(Format JPG/PNG)' },
+        { key: 'foto_sn_slave_ap1', label: 'Foto Slave AP 1', type: 'photo', store: 'foto_sn_slave_ap1', prompt: '📷 Kirim *FOTO SN SLAVE ACCESS POINT 1*:\n(Format JPG/PNG)' },
+        { key: 'foto_sn_slave_ap2', label: 'Foto Slave AP 2', type: 'photo', store: 'foto_sn_slave_ap2', prompt: '📷 Kirim *FOTO SLAVE ACCESS POINT 2* (kirim foto gelap jika hanya 1):\n(Format JPG/PNG)' },
+        { key: 'foto_sn_slave_ap3', label: 'Foto Slave AP 3', type: 'photo', store: 'foto_sn_slave_ap3', prompt: '📷 Kirim *FOTO SLAVE ACCESS POINT 3* (kirim foto gelap jika hanya 2):\n(Format JPG/PNG)' },
+        { key: 'foto_sn_slave_ap4', label: 'Foto Slave AP 4', type: 'photo', store: 'foto_sn_slave_ap4', prompt: '📷 Kirim *FOTO SLAVE ACCESS POINT 4* (kirim foto gelap jika hanya 3):\n(Format JPG/PNG)' },
+        { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT', type: 'photo', store: 'foto_sn_ont_terpasang', prompt: '📷 Kirim *FOTO SN ONT*:\n(Format JPG/PNG)' },
+        { key: 'foto_prekso', label: 'Foto Instalasi Prekso', type: 'photo', store: 'foto_prekso', prompt: '📷 Kirim *FOTO INSTALASI PREKSO*:\n(Format JPG/PNG)' },
+        { key: 'foto_pengeleman', label: 'Foto Saat Pengeleman', type: 'photo', store: 'foto_pengeleman', prompt: '📷 Kirim *FOTO INSTALASI SAAT PENGELEMAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_speedtest', label: 'Foto Speedtest', type: 'photo', store: 'foto_speedtest', prompt: '📷 Kirim *FOTO SPEEDTEST*:\n(Format JPG/PNG)' },
+        { key: 'foto_dengan_plg', label: 'Foto Dengan Pelanggan', type: 'photo', store: 'foto_dengan_plg', prompt: '📷 Kirim *FOTO DENGAN PELANGGAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_surat_tugas', label: 'Foto Surat Tugas TTD Pelanggan', type: 'photo', store: 'foto_surat_tugas', prompt: '📷 Kirim *FOTO SURAT TUGAS TTD PELANGGAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_ba', label: 'Foto BA TTD Pelanggan', type: 'photo', store: 'foto_ba', prompt: '📷 Kirim *FOTO BA TTD PELANGGAN*:\n(Format JPG/PNG)' }
+      );
+    }
+
+    return [...common, ...specific];
+  }
 
   function buildKeyboard(step) {
     const rows = [];
     // Baris tombol pilihan (untuk step berpilihan)
     if (step.type === 'choice' && step.options) {
       const opts = step.options;
-      for (let i = 0; i < opts.length; i += 2) {
-        rows.push(opts.slice(i, i + 2).map(o => ({ text: o, callback_data: `VAL|${o}` })));
+      for (let i = 0; i < opts.length; i += 3) {
+        rows.push(opts.slice(i, i + 3).map(o => ({ text: o, callback_data: `VAL|${o}` })));
       }
     }
     // Baris tombol navigasi (selalu ada)
@@ -349,9 +482,9 @@ if (bot) {
   async function sendStep(chatId) {
     const s = sessions.get(chatId);
     if (!s) return;
-    const step = STEPS[s.step];
+    const step = s.steps[s.step];
     const opts = { parse_mode: 'Markdown', ...buildKeyboard(step) };
-    await bot.sendMessage(chatId, `*Langkah ${s.step + 1}/${STEPS.length}* — ${step.label}\n──────────────────\n${step.prompt}`, opts);
+    await bot.sendMessage(chatId, `*Langkah ${s.step + 1}/${s.steps.length}* — ${step.label}\n──────────────────\n${step.prompt}`, opts);
   }
 
   function backStep(chatId) {
@@ -497,7 +630,9 @@ if (bot) {
         `❌ Anda belum login.\nTekan tombol *Login dengan NIK* di bawah untuk masuk:`,
         { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🔐 Login dengan NIK', callback_data: 'MENU|login' }]] } }
       );
-    sessions.set(chatId, { step: 0, data: { nik: user.nik, nama: user.nama } });
+    // Mulai dengan common steps dulu (WONUM, SC, STO, Layanan)
+    const commonSteps = buildSteps('placeholder').slice(0, 4);
+    sessions.set(chatId, { step: 0, steps: commonSteps, data: { nik: user.nik, nama: user.nama } });
     await bot.sendMessage(chatId, `👤 Login sebagai *${user.nama}* (${user.nik}). Mulai input data...`, { parse_mode: 'Markdown' });
     return sendStep(chatId);
   }
@@ -519,7 +654,7 @@ if (bot) {
   async function processPhoto(chatId, msg) {
     const s = sessions.get(chatId);
     if (!s) return;
-    const step = STEPS[s.step];
+    const step = s.steps[s.step];
     if (!msg.photo || !msg.photo.length) {
       return bot.sendMessage(chatId, '❌ Ini bukan foto. Kirim *foto* yang diminta atau ketik /batal.', { parse_mode: 'Markdown' });
     }
@@ -568,16 +703,13 @@ if (bot) {
     const s = sessions.get(chatId);
     if (!s) return;
     s.step += 1;
-    // Jika step berikutnya adalah manual SN dan OCR sudah berhasil, skip otomatis
-    if (s.step < STEPS.length) {
-      const nextStep = STEPS[s.step];
-      if (nextStep.key === 'manual_sn_odp' && s.data.sn_odp) {
-        s.step += 1; // skip manual step, OCR sudah dapat SN
-      } else if (nextStep.key === 'manual_sn_dc' && s.data.sn_dc) {
-        s.step += 1; // skip manual step, OCR sudah dapat SN
-      }
+    // Setelah step layanan dipilih (index 3), rebuild full steps
+    if (s.step === 4 && s.data.layanan) {
+      const fullSteps = buildSteps(s.data.layanan);
+      s.steps = fullSteps;
+      s.step = 4; // mulai dari step pertama setelah layanan
     }
-    if (s.step >= STEPS.length) return finish(chatId);
+    if (s.step >= s.steps.length) return finish(chatId);
     sendStep(chatId);
   }
 
@@ -588,34 +720,61 @@ if (bot) {
 
     db.runP(
       `INSERT INTO jobs (nik,nama,wonum,sc,sto,layanan,no_internet,no_voice,
-        datek_odp,port_odp,valins_id,p_dc,lokasi_pelanggan,lokasi_odp,
-        ocr_qr_odp,ocr_qr_dc,foto_qr_odp,foto_qr_dc,foto_odp_buka,foto_odp_tutup,
-        foto_redaman_odp,foto_clamp_hook,foto_sclamp_tiang,foto_ikr,foto_belakang_sn,
-        foto_rumah,sn_odp,sn_dc,sn_issue,sn_ont,foto_p_dc,manual_sn_odp,manual_sn_dc)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        label_odp,port_odp,material_dc,lokasi_pelanggan,lokasi_odp,
+        barcode_dc,barcode_odp,valins_id,sn_ont,sn_stb,sn_orbit,no_orbit,
+        sn_mesh,smooa_nohp,
+        sn_ap1,sn_ap2,sn_ap3,sn_ap4,
+        foto_odp_buka,foto_odp_tutup,foto_sclamp_tiang,foto_clamp_hook,foto_ikr,
+        foto_sn_ont_terpasang,foto_sn_stb,foto_sn_orbit,foto_sn_mesh,foto_belakang_ont,
+        foto_rumah,foto_sn_master_ap,foto_sn_slave_ap1,foto_sn_slave_ap2,
+        foto_sn_slave_ap3,foto_sn_slave_ap4,foto_prekso,foto_pengeleman,
+        foto_speedtest,foto_dengan_plg,foto_surat_tugas,foto_ba,
+        panjang_prekso,panjang_kabel_lan,jumlah_roset,jumlah_splitter,
+        wall_throughging,clip,atb,jam_datang,jam_selesai,
+        sn_odp,sn_dc,sn_issue)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [d.nik, d.nama, d.wonum, d.sc, d.sto, d.layanan,
-       d.no_internet, d.no_voice, d.datek_odp, d.port_odp,
-       d.valins_id, d.p_dc, d.lokasi_pelanggan, d.lokasi_odp,
-       d.ocr_qr_odp, d.ocr_qr_dc, d.foto_qr_odp, d.foto_qr_dc,
-       d.foto_odp_buka, d.foto_odp_tutup,
-       d.foto_redaman_odp, d.foto_clamp_hook, d.foto_sclamp_tiang, d.foto_ikr, d.foto_belakang_sn,
-       d.foto_rumah, d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0,
-       d.sn_ont || null, d.foto_p_dc || null,
-       d.manual_sn_odp || null, d.manual_sn_dc || null]
+       d.no_internet || null, d.no_voice || null,
+       d.label_odp || null, d.port_odp || null, d.material_dc || null,
+       d.lokasi_pelanggan || null, d.lokasi_odp || null,
+       d.barcode_dc || null, d.barcode_odp || null,
+       d.valins_id || null, d.sn_ont || null,
+       d.sn_stb || null, d.sn_orbit || null, d.no_orbit || null,
+       d.sn_mesh || null, d.smooa_nohp || null,
+       d.sn_ap1 || null, d.sn_ap2 || null, d.sn_ap3 || null, d.sn_ap4 || null,
+       d.foto_odp_buka || null, d.foto_odp_tutup || null, d.foto_sclamp_tiang || null,
+       d.foto_clamp_hook || null, d.foto_ikr || null,
+       d.foto_sn_ont_terpasang || null, d.foto_sn_stb || null,
+       d.foto_sn_orbit || null, d.foto_sn_mesh || null, d.foto_belakang_ont || null,
+       d.foto_rumah || null, d.foto_sn_master_ap || null,
+       d.foto_sn_slave_ap1 || null, d.foto_sn_slave_ap2 || null,
+       d.foto_sn_slave_ap3 || null, d.foto_sn_slave_ap4 || null,
+       d.foto_prekso || null, d.foto_pengeleman || null,
+       d.foto_speedtest || null, d.foto_dengan_plg || null,
+       d.foto_surat_tugas || null, d.foto_ba || null,
+       d.panjang_prekso || null, d.panjang_kabel_lan || null,
+       d.jumlah_roset || null, d.jumlah_splitter || null,
+       d.wall_throughging || null, d.clip || null, d.atb || null,
+       d.jam_datang || null, d.jam_selesai || null,
+       d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0]
     ).then((r) => {
       sessions.delete(chatId);
       // buat objek job lengkap untuk laporan ke target
       const job = { id: r.lastID, nik: d.nik, nama: d.nama, wonum: d.wonum, sc: d.sc, sto: d.sto, layanan: d.layanan,
-        ocr_qr_odp: d.ocr_qr_odp, ocr_qr_dc: d.ocr_qr_dc, foto_qr_odp: d.foto_qr_odp, foto_qr_dc: d.foto_qr_dc,
+        no_internet: d.no_internet, no_voice: d.no_voice,
+        label_odp: d.label_odp, port_odp: d.port_odp, material_dc: d.material_dc,
+        barcode_dc: d.barcode_dc, barcode_odp: d.barcode_odp,
+        valins_id: d.valins_id, sn_ont: d.sn_ont, sn_stb: d.sn_stb,
+        sn_orbit: d.sn_orbit, no_orbit: d.no_orbit, sn_mesh: d.sn_mesh,
+        smooa_nohp: d.smooa_nohp,
+        sn_ap1: d.sn_ap1, sn_ap2: d.sn_ap2, sn_ap3: d.sn_ap3, sn_ap4: d.sn_ap4,
         foto_odp_buka: d.foto_odp_buka, foto_odp_tutup: d.foto_odp_tutup,
-        foto_redaman_odp: d.foto_redaman_odp, foto_clamp_hook: d.foto_clamp_hook,
-        foto_sclamp_tiang: d.foto_sclamp_tiang, foto_ikr: d.foto_ikr, foto_belakang_sn: d.foto_belakang_sn,
-        foto_rumah: d.foto_rumah, foto_p_dc: d.foto_p_dc,
-        sn_odp: d.manual_sn_odp || d.sn_odp || null,
-        sn_dc: d.manual_sn_dc || d.sn_dc || null,
-        sn_ont: d.sn_ont || null,
-        sn_issue: d.sn_issue || 0,
-        manual_sn_odp: d.manual_sn_odp || null, manual_sn_dc: d.manual_sn_dc || null };
+        foto_sclamp_tiang: d.foto_sclamp_tiang, foto_clamp_hook: d.foto_clamp_hook,
+        foto_ikr: d.foto_ikr, foto_sn_ont_terpasang: d.foto_sn_ont_terpasang,
+        foto_sn_stb: d.foto_sn_stb, foto_sn_orbit: d.foto_sn_orbit,
+        foto_sn_mesh: d.foto_sn_mesh, foto_belakang_ont: d.foto_belakang_ont,
+        foto_rumah: d.foto_rumah,
+        sn_odp: d.sn_odp || null, sn_dc: d.sn_dc || null, sn_issue: d.sn_issue || 0 };
       sendJobReport(job);
       bot.sendMessage(chatId,
         `✅ *Berhasil! Laporan tersimpan*\n` +
@@ -723,7 +882,7 @@ if (bot) {
     const s = sessions.get(chatId);
     if (!s) return bot.sendMessage(chatId, 'Tidak ada input berjalan. Ketik /baru untuk mulai, atau /help.');
 
-    const step = STEPS[s.step];
+    const step = s.steps[s.step];
 
     if (step.type === 'location') {
       if (msg.location) {
@@ -828,7 +987,7 @@ if (bot) {
       if (!s) return bot.sendMessage(chatId, 'Sesi tidak aktif. Ketik /baru untuk memulai.');
       if (act === 'back') return backStep(chatId);
       if (act === 'skip') {
-        const step = STEPS[s.step];
+        const step = s.steps[s.step];
         if (!step.skippable) return bot.answerCallbackQuery(cb.id, { text: 'Langkah ini wajib diisi.', show_alert: true });
         s.data[step.key] = null;
         await bot.editMessageText(`⏭ *${step.label}*: dilewati (kosong)`, {
@@ -843,7 +1002,7 @@ if (bot) {
       await bot.answerCallbackQuery(cb.id);
       if (!s) return bot.sendMessage(chatId, 'Sesi tidak aktif.');
       const value = cb.data.split('|')[1];
-      const step = STEPS[s.step];
+      const step = s.steps[s.step];
       if (step.type !== 'choice') return;
       s.data[step.key] = value;
       await bot.editMessageText(`✅ *${step.label}*: ${value}`, {
@@ -1019,12 +1178,12 @@ app.get('/api/jobs/:id', requireAuth, (req, res) => {
 
 // ── Validasi / Revisi oleh validator/admin ────────────────
 const REVIEW_CATEGORIES = [
-  'Dokumen tidak lengkap',
-  'Foto QR ODP tidak terbaca',
-  'Foto QR DC tidak terbaca',
+  'Foto ODP tidak lengkap',
+  'Foto S-Clamp tiang tidak sesuai',
   'Lokasi tidak sesuai',
-  'Foto ODP buka/tutup kurang',
   'Data tidak cocok',
+  'SN tidak terbaca',
+  'Foto kurang jelas',
   'Lainnya'
 ];
 
@@ -1071,7 +1230,11 @@ app.post('/api/jobs/:id/ack', requireRole('teknisi'), async (req, res) => {
 
 // ── Teknisi: edit data (hanya miliknya, status REJECT) ───
 const EDITABLE_FIELDS = ['nama','wonum','sc','sto','layanan','no_internet','no_voice',
-  'datek_odp','port_odp','valins_id','p_dc','lokasi_pelanggan','lokasi_odp','sn_ont'];
+  'label_odp','port_odp','material_dc','lokasi_pelanggan','lokasi_odp',
+  'barcode_dc','barcode_odp','valins_id','sn_ont','sn_stb','sn_orbit','no_orbit',
+  'sn_mesh','smooa_nohp','sn_ap1','sn_ap2','sn_ap3','sn_ap4',
+  'panjang_prekso','panjang_kabel_lan','jumlah_roset','jumlah_splitter',
+  'wall_throughging','clip','atb','jam_datang','jam_selesai'];
 
 app.patch('/api/jobs/:id', requireRole('teknisi'), async (req, res) => {
   try {
@@ -1128,10 +1291,17 @@ app.get('/api/teknisi-list', requireRole('validator', 'admin'), (req, res) => {
 // ── Export CSV / JSON (role-aware, dengan filter) ────────
 function toCSV(rows) {
   const cols = ['id','nik','nama','wonum','sc','sto','layanan','no_internet','no_voice',
-    'datek_odp','port_odp','valins_id','p_dc','lokasi_pelanggan','lokasi_odp',
-    'ocr_qr_odp','ocr_qr_dc','foto_qr_odp','foto_qr_dc','foto_odp_buka','foto_odp_tutup',
-    'foto_redaman_odp','foto_clamp_hook','foto_sclamp_tiang','foto_ikr','foto_belakang_sn',
-    'foto_rumah','foto_p_dc','sn_odp','sn_dc','sn_ont','sn_issue','manual_sn_odp','manual_sn_dc',
+    'label_odp','port_odp','material_dc','lokasi_pelanggan','lokasi_odp',
+    'barcode_dc','barcode_odp','valins_id','sn_ont','sn_stb','sn_orbit','no_orbit',
+    'sn_mesh','smooa_nohp','sn_ap1','sn_ap2','sn_ap3','sn_ap4',
+    'foto_odp_buka','foto_odp_tutup','foto_sclamp_tiang','foto_clamp_hook','foto_ikr',
+    'foto_sn_ont_terpasang','foto_sn_stb','foto_sn_orbit','foto_sn_mesh','foto_belakang_ont',
+    'foto_rumah','foto_sn_master_ap','foto_sn_slave_ap1','foto_sn_slave_ap2',
+    'foto_sn_slave_ap3','foto_sn_slave_ap4','foto_prekso','foto_pengeleman',
+    'foto_speedtest','foto_dengan_plg','foto_surat_tugas','foto_ba',
+    'panjang_prekso','panjang_kabel_lan','jumlah_roset','jumlah_splitter',
+    'wall_throughging','clip','atb','jam_datang','jam_selesai',
+    'sn_odp','sn_dc','sn_issue',
     'status','review_cat','review_note','reviewed_by','reviewed_at','created_at'];
   const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const head = cols.map(c => esc(c)).join(',');
@@ -1174,8 +1344,11 @@ app.get('/api/stats', requireAuth, (req, res) => {
 });
 
 // ── Upload foto dari web ─────────────────────────────────
-const PHOTO_FIELDS = ['foto_qr_odp', 'foto_qr_dc', 'foto_odp_buka', 'foto_odp_tutup',
-  'foto_redaman_odp', 'foto_clamp_hook', 'foto_sclamp_tiang', 'foto_ikr', 'foto_belakang_sn', 'foto_p_dc'];
+const PHOTO_FIELDS = ['foto_odp_buka', 'foto_odp_tutup', 'foto_sclamp_tiang', 'foto_clamp_hook', 'foto_ikr',
+  'foto_sn_ont_terpasang', 'foto_sn_stb', 'foto_sn_orbit', 'foto_sn_mesh', 'foto_belakang_ont',
+  'foto_rumah', 'foto_sn_master_ap', 'foto_sn_slave_ap1', 'foto_sn_slave_ap2',
+  'foto_sn_slave_ap3', 'foto_sn_slave_ap4', 'foto_prekso', 'foto_pengeleman',
+  'foto_speedtest', 'foto_dengan_plg', 'foto_surat_tugas', 'foto_ba'];
 app.post('/api/jobs/:id/upload', requireAuth, upload.fields(
   PHOTO_FIELDS.map(n => ({ name: n, maxCount: 1 }))
 ), async (req, res) => {

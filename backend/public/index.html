@@ -284,12 +284,21 @@
     <div id="edit-fileinputs" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
       <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto ODP Terbuka</label><input type="file" id="ef-buka" accept=".jpg,.jpeg,.png"></div>
       <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto ODP Tertutup</label><input type="file" id="ef-tutup" accept=".jpg,.jpeg,.png"></div>
-      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Redaman ODP</label><input type="file" id="ef-redaman" accept=".jpg,.jpeg,.png"></div>
-      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Clamp Hook</label><input type="file" id="ef-clamp" accept=".jpg,.jpeg,.png"></div>
       <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto S-Clamp Tiang</label><input type="file" id="ef-sclamp" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Clamp Hook</label><input type="file" id="ef-clamp" accept=".jpg,.jpeg,.png"></div>
       <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto IKR</label><input type="file" id="ef-ikr" accept=".jpg,.jpeg,.png"></div>
-      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Belakang SN ONT</label><input type="file" id="ef-belsn" accept=".jpg,.jpeg,.png"></div>
-      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Panjang DC</label><input type="file" id="ef-pdc" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto SN ONT Terpasang</label><input type="file" id="ef-ont" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto SN STB</label><input type="file" id="ef-stb" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto SN ORBIT</label><input type="file" id="ef-orbit" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto SN MESH</label><input type="file" id="ef-mesh" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Belakang ONT</label><input type="file" id="ef-ont2" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Rumah</label><input type="file" id="ef-rumah" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Prekso</label><input type="file" id="ef-prekso" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Pengeleman</label><input type="file" id="ef-pengeleman" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Speedtest</label><input type="file" id="ef-speedtest" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Dengan Pelanggan</label><input type="file" id="ef-plg" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto Surat Tugas</label><input type="file" id="ef-st" accept=".jpg,.jpeg,.png"></div>
+      <div class="field" style="flex:1;min-width:160px;margin-bottom:0"><label>Foto BA</label><input type="file" id="ef-ba" accept=".jpg,.jpeg,.png"></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px">
       <button class="btn btn-blue" onclick="saveEditBtn()">Simpan Perubahan</button>
@@ -489,8 +498,8 @@ async function loadChart() {
 }
 
 const COLUMNS = {
-  admin: ['#','NIK','Nama','WONUM','SC','STO','Layanan','SN ODP','SN DC','Foto ODP','Status','Catatan','Aksi'],
-  validator: ['#','NIK','Nama','WONUM','SC','STO','Layanan','SN ODP','SN DC','Foto ODP','Status','Catatan','Aksi'],
+  admin: ['#','NIK','Nama','WONUM','SC','STO','Layanan','SN ONT','Status','Catatan','Aksi'],
+  validator: ['#','NIK','Nama','WONUM','SC','STO','Layanan','SN ONT','Status','Catatan','Aksi'],
   teknisi: ['#','WONUM','SC','STO','Layanan','Status','Catatan','Aksi']
 };
 
@@ -527,12 +536,7 @@ function renderJobs() {
         <td class="mono" style="color:var(--navy);font-weight:600">${j.wonum || '-'}</td>
         <td>${j.sc || '-'}</td><td>${j.sto || '-'}</td>
         <td><span class="chip">${j.layanan || '-'}</span></td>
-        <td>${j.sn_odp ? `<span class="ocr-text" title="${j.sn_odp}" style="color:var(--blue)">${j.sn_odp}</span>` : (j.sn_issue ? `<span style="color:var(--warn,#e67e22)" title="SN perlu cek manual">⚠ perlu cek</span>` : '-')}</td>
-        <td>${j.sn_dc ? `<span class="ocr-text" title="${j.sn_dc}" style="color:var(--blue)">${j.sn_dc}</span>` : (j.sn_issue ? `<span style="color:var(--warn,#e67e22)" title="SN perlu cek manual">⚠ perlu cek</span>` : '-')}</td>
-        <td>
-          ${j.foto_odp_buka ? `<img class="thumb" src="/uploads/${j.foto_odp_buka}" onclick="lightbox('/uploads/${j.foto_odp_buka}')">` : ''}
-          ${j.foto_odp_tutup ? `<img class="thumb" src="/uploads/${j.foto_odp_tutup}" onclick="lightbox('/uploads/${j.foto_odp_tutup}')">` : ''}
-        </td>
+        <td>${j.sn_ont ? `<span style="color:var(--blue)">${j.sn_ont}</span>` : '-'}</td>
         <td><span class="badge badge-${j.status}">${j.status}</span></td>
         <td class="note-cell" title="${j.review_note||''}">${j.review_note || '-'}</td>
         <td style="white-space:nowrap">
@@ -555,12 +559,17 @@ async function openDetail(id, focus) {
   const fields = [
     ['NIK', j.nik], ['Nama Teknisi', j.nama], ['WONUM', j.wonum], ['SC', j.sc],
     ['STO', j.sto], ['Layanan', j.layanan], ['No. Internet', j.no_internet],
-    ['No. Voice', j.no_voice], ['Datek ODP', j.datek_odp], ['Port ODP', j.port_odp],
-    ['SN ODP', j.sn_odp || (j.sn_issue ? '⚠ perlu cek manual' : '')],
-    ['SN DC', j.sn_dc || (j.sn_issue ? '⚠ perlu cek manual' : '')],
-    ['SN ONT', j.sn_ont || ''],
-    ['Valins ID', j.valins_id], ['P. DC', j.p_dc],
-    ['Lokasi Pelanggan', j.lokasi_pelanggan], ['Lokasi ODP', j.lokasi_odp],
+    ['No. Voice', j.no_voice], ['Label ODP', j.label_odp], ['Port ODP', j.port_odp],
+    ['Material DC/Precon', j.material_dc], ['Barcode DC', j.barcode_dc], ['Barcode ODP', j.barcode_odp],
+    ['Valins ID', j.valins_id], ['SN ONT', j.sn_ont || ''],
+    ['SN STB', j.sn_stb || ''], ['SN ORBIT', j.sn_orbit || ''], ['No. ORBIT', j.no_orbit || ''],
+    ['SN MESH WIFI', j.sn_mesh || ''], ['SMOOA NO.HP', j.smooa_nohp || ''],
+    ['SN AP 1', j.sn_ap1 || ''], ['SN AP 2', j.sn_ap2 || ''], ['SN AP 3', j.sn_ap3 || ''], ['SN AP 4', j.sn_ap4 || ''],
+    ['Panjang Prekso', j.panjang_prekso || ''], ['Panjang Kabel LAN', j.panjang_kabel_lan || ''],
+    ['Jumlah Roset', j.jumlah_roset || ''], ['Jumlah Splitter', j.jumlah_splitter || ''],
+    ['Wall Througing', j.wall_throughging || ''], ['CLIP', j.clip || ''], ['ATB', j.atb || ''],
+    ['Jam Datang', j.jam_datang || ''], ['Jam Selesai', j.jam_selesai || ''],
+    ['Shareloc Pelanggan', j.lokasi_pelanggan], ['Shareloc ODP', j.lokasi_odp],
     ['Validator', j.reviewed_by || '-'], ['Divalidasi', j.reviewed_at || '-']
   ];
 
@@ -570,11 +579,10 @@ async function openDetail(id, focus) {
     reviewHtml = `
       <div class="review-panel">
         <div class="sec-title" style="margin-top:0">Checklist Validasi</div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Foto QR ODP jelas & terbaca</label></div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Foto QR DC jelas & terbaca</label></div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Foto ODP buka (bebas patchcord)</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Foto ODP buka (bersih & bebas patchcord)</label></div>
         <div class="check-row"><input type="checkbox" class="chk"><label>Foto ODP tertutup</label></div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Lokasi pelanggan & ODP tersedia</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Foto S-Clamp tiang terpasang</label></div>
+        <div class="check-row"><input type="checkbox" class="chk"><label>Shareloc pelanggan & ODP tersedia</label></div>
         <div class="check-row"><input type="checkbox" class="chk"><label>Data laporan lengkap</label></div>
         <div style="margin-top:14px">
           <label style="font-size:.76rem;font-weight:700;color:var(--navy)">Kategori Revisi</label>
@@ -601,14 +609,23 @@ async function openDetail(id, focus) {
       </div>`;
   }
 
-  const photos = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup'],['foto_rumah','Foto Rumah'],['foto_p_dc','Foto Panjang DC']]
+  const photos = [['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_clamp_hook','Clamp Hook'],['foto_ikr','IKR'],['foto_sn_ont_terpasang','SN ONT Terpasang'],['foto_sn_stb','SN STB'],['foto_sn_orbit','SN ORBIT'],['foto_sn_mesh','SN MESH'],['foto_belakang_ont','Belakang ONT'],['foto_rumah','Rumah'],['foto_sn_master_ap','Master AP'],['foto_sn_slave_ap1','Slave AP 1'],['foto_sn_slave_ap2','Slave AP 2'],['foto_sn_slave_ap3','Slave AP 3'],['foto_sn_slave_ap4','Slave AP 4'],['foto_prekso','Prekso'],['foto_pengeleman','Pengeleman'],['foto_speedtest','Speedtest'],['foto_dengan_plg','Dengan Pelanggan'],['foto_surat_tugas','Surat Tugas'],['foto_ba','BA']]
     .filter(([k]) => j[k]).map(([k,l]) => `<div style="text-align:center"><img src="/uploads/${j[k]}" onclick="lightbox('/uploads/${j[k]}')" style="width:100%;max-width:220px;border-radius:10px;border:1px solid var(--line);cursor:zoom-in"><div style="font-size:.7rem;color:var(--muted);margin-top:4px">${l}</div></div>`).join('');
 
   document.getElementById('modal-body').innerHTML = `
     <div class="detail-grid">${fields.map(([k,v]) => `<div class="detail-item"><div class="key">${k}</div><div class="val">${fmt(v)}</div></div>`).join('')}</div>
 
-    <div class="sec-title">Hasil OCR</div>
-    <div class="ocr-box">QR ODP: ${j.ocr_qr_odp || '(kosong)'}\n\nQR DC: ${j.ocr_qr_dc || '(kosong)'}</div>
+    <div class="sec-title">Data Tambahan</div>
+    <div class="ocr-box">SN ONT: ${j.sn_ont || '-'}
+SN STB: ${j.sn_stb || '-'}
+SN ORBIT: ${j.sn_orbit || '-'}
+SN MESH: ${j.sn_mesh || '-'}
+SMOOA: ${j.smooa_nohp || '-'}
+SN AP 1: ${j.sn_ap1 || '-'}
+SN AP 2: ${j.sn_ap2 || '-'}
+SN AP 3: ${j.sn_ap3 || '-'}
+Jam Datang: ${j.jam_datang || '-'}
+Jam Selesai: ${j.jam_selesai || '-'}</div>
 
     <div class="sec-title">Dokumentasi Foto</div>
     <div class="foto-pair">${photos || '<span style="color:var(--muted)">Tidak ada foto</span>'}</div>
@@ -661,19 +678,27 @@ async function openEditModal(id) {
   const fields = [
     ['nama','Nama Teknisi'],['wonum','WONUM'],['sc','SC'],['sto','STO'],
     ['layanan','Layanan'],['no_internet','No. Internet'],['no_voice','No. Voice'],
-    ['datek_odp','Datek ODP'],['port_odp','Port ODP'],['valins_id','Valins ID'],
-    ['p_dc','P. DC'],['sn_ont','SN ONT'],
-    ['lokasi_pelanggan','Lokasi Pelanggan'],['lokasi_odp','Lokasi ODP']
+    ['label_odp','Label ODP'],['port_odp','Port ODP'],['material_dc','Material DC'],
+    ['barcode_dc','Barcode DC'],['barcode_odp','Barcode ODP'],
+    ['valins_id','Valins ID'],['sn_ont','SN ONT'],['sn_stb','SN STB'],
+    ['sn_orbit','SN ORBIT'],['no_orbit','No. ORBIT'],['sn_mesh','SN MESH'],
+    ['smooa_nohp','SMOOA NO.HP'],
+    ['sn_ap1','SN AP 1'],['sn_ap2','SN AP 2'],['sn_ap3','SN AP 3'],['sn_ap4','SN AP 4'],
+    ['panjang_prekso','Panjang Prekso'],['panjang_kabel_lan','Panjang Kabel LAN'],
+    ['jumlah_roset','Jumlah Roset'],['jumlah_splitter','Jumlah Splitter'],
+    ['wall_throughging','Wall Througing'],['clip','CLIP'],['atb','ATB'],
+    ['jam_datang','Jam Datang'],['jam_selesai','Jam Selesai'],
+    ['lokasi_pelanggan','Shareloc Pelanggan'],['lokasi_odp','Shareloc ODP']
   ];
   document.getElementById('edit-fields').innerHTML = fields.map(([k,l]) => `
     <div class="detail-item"><div class="key">${l}</div>
       <input class="ef" data-k="${k}" value="${(j[k]||'').replace(/"/g,'&quot;')}" style="width:100%;margin-top:3px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px">
     </div>`).join('');
 
-  const photov = [['foto_qr_odp','QR ODP'],['foto_qr_dc','QR DC'],['foto_redaman_odp','Redaman ODP'],['foto_clamp_hook','Clamp Hook'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_ikr','IKR'],['foto_belakang_sn','Belakang SN ONT'],['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup'],['foto_rumah','Foto Rumah'],['foto_p_dc','Foto Panjang DC']]
+  const photov = [['foto_odp_buka','ODP Terbuka'],['foto_odp_tutup','ODP Tertutup'],['foto_sclamp_tiang','S-Clamp Tiang'],['foto_clamp_hook','Clamp Hook'],['foto_ikr','IKR'],['foto_sn_ont_terpasang','SN ONT Terpasang'],['foto_sn_stb','SN STB'],['foto_sn_orbit','SN ORBIT'],['foto_sn_mesh','SN MESH'],['foto_belakang_ont','Belakang ONT'],['foto_rumah','Rumah'],['foto_sn_master_ap','Master AP'],['foto_sn_slave_ap1','Slave AP 1'],['foto_sn_slave_ap2','Slave AP 2'],['foto_sn_slave_ap3','Slave AP 3'],['foto_sn_slave_ap4','Slave AP 4'],['foto_prekso','Prekso'],['foto_pengeleman','Pengeleman'],['foto_speedtest','Speedtest'],['foto_dengan_plg','Dengan Pelanggan'],['foto_surat_tugas','Surat Tugas'],['foto_ba','BA']]
     .filter(([k]) => j[k]).map(([k,l]) => `<img src="/uploads/${j[k]}" title="${l}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line)" onclick="lightbox('/uploads/${j[k]}')">`).join('');
   document.getElementById('edit-photos').innerHTML = photov || '<span style="color:var(--muted)">Belum ada foto</span>';
-  ['ef-buka','ef-tutup','ef-redaman','ef-clamp','ef-sclamp','ef-ikr','ef-belsn','ef-pdc'].forEach(id => { document.getElementById(id).value = ''; });
+  ['ef-buka','ef-tutup','ef-sclamp','ef-clamp','ef-ikr','ef-ont','ef-stb','ef-orbit','ef-mesh','ef-ont2','ef-rumah','ef-prekso','ef-pengeleman','ef-speedtest','ef-plg','ef-st','ef-ba'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('edit-modal-bg').classList.add('open');
 }
 function closeEditModal() {
@@ -707,9 +732,12 @@ async function saveEditBtn() {
 async function uploadEditPhotos() {
   const fd = new FormData();
   const PHOTO_INPUTS = {
-    'ef-buka':'foto_odp_buka','ef-tutup':'foto_odp_tutup','ef-redaman':'foto_redaman_odp',
-    'ef-clamp':'foto_clamp_hook','ef-sclamp':'foto_sclamp_tiang','ef-ikr':'foto_ikr',
-    'ef-belsn':'foto_belakang_sn','ef-pdc':'foto_p_dc'
+    'ef-buka':'foto_odp_buka','ef-tutup':'foto_odp_tutup',
+    'ef-sclamp':'foto_sclamp_tiang','ef-clamp':'foto_clamp_hook','ef-ikr':'foto_ikr',
+    'ef-ont':'foto_sn_ont_terpasang','ef-stb':'foto_sn_stb',
+    'ef-orbit':'foto_sn_orbit','ef-mesh':'foto_sn_mesh','ef-ont2':'foto_belakang_ont',
+    'ef-rumah':'foto_rumah','ef-prekso':'foto_prekso','ef-pengeleman':'foto_pengeleman',
+    'ef-speedtest':'foto_speedtest','ef-plg':'foto_dengan_plg','ef-st':'foto_surat_tugas','ef-ba':'foto_ba'
   };
   const okExt = (n) => /\.(jpe?g|png)$/i.test(n);
   let count = 0;

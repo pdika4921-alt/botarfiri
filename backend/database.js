@@ -97,7 +97,20 @@ function addColumn(table, name) {
  'reviewed_at', 'ack', 'sto', 'layanan',
  'foto_redaman_odp', 'foto_clamp_hook', 'foto_sclamp_tiang', 'foto_ikr', 'foto_belakang_sn',
  'sn_odp', 'sn_dc', 'sn_issue', 'foto_rumah', 'sn_ont', 'foto_p_dc',
- 'manual_sn_odp', 'manual_sn_dc'].forEach(c => addColumn('jobs', c));
+ 'manual_sn_odp', 'manual_sn_dc',
+ 'label_odp', 'material_dc', 'barcode_dc', 'barcode_odp',
+ 'sn_stb', 'foto_sn_stb', 'sn_orbit', 'foto_sn_orbit',
+ 'sn_mesh', 'foto_sn_mesh', 'foto_belakang_ont',
+ 'smooa_nohp',
+ 'sn_ap1', 'foto_sn_ap1', 'sn_ap2', 'foto_sn_ap2', 'sn_ap3', 'foto_sn_ap3',
+ 'sn_ap4', 'foto_sn_ap4',
+ 'jam_datang', 'jam_selesai',
+ 'foto_sn_ont_terpasang', 'foto_sn_master_ap', 'foto_sn_slave_ap1',
+ 'foto_sn_slave_ap2', 'foto_sn_slave_ap3', 'foto_sn_slave_ap4',
+ 'foto_prekso', 'foto_pengeleman', 'foto_speedtest', 'foto_dengan_plg', 'foto_surat_tugas', 'foto_ba',
+ 'panjang_prekso', 'panjang_kabel_lan', 'jumlah_roset', 'jumlah_splitter',
+ 'wall_throughging', 'clip', 'atb',
+ 'no_orbit'].forEach(c => addColumn('jobs', c));
 ['chat_id', 'login_token'].forEach(c => addColumn('users', c));
 
 // ── Setup awal: buat admin default hanya jika DB kosong ──
