@@ -1645,14 +1645,15 @@ app.post('/api/jobs/:id/resubmit', requireRole('teknisi'), async (req, res) => {
     if (job.nik !== req.session.user.nik) return res.status(403).json({ error: 'Akses ditolak' });
     if (job.status !== 'REJECT') return res.status(400).json({ error: 'Hanya data REJECT yang bisa dikirim ulang' });
 
+    const newRev = (job.rev_count || 0) + 1;
     await db.runP(
-      `UPDATE jobs SET status='PENDING', review_note=NULL, review_cat=NULL, reviewed_by=NULL, reviewed_at=NULL, ack=0 WHERE id=?`,
-      [req.params.id]
+      `UPDATE jobs SET status='PENDING', review_note=NULL, review_cat=NULL, review_items=NULL, reviewed_by=NULL, reviewed_at=NULL, ack=0, rev_count=? WHERE id=?`,
+      [newRev, req.params.id]
     );
     // kirim laporan revisi ke chat teknisi + target terkonfigurasi
     const updated = await db.getP('SELECT * FROM jobs WHERE id=?', [req.params.id]);
     sendJobReport(updated).catch(() => {});
-    res.json({ success: true });
+    res.json({ success: true, rev_count: newRev });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

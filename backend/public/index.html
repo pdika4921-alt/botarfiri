@@ -587,7 +587,8 @@ async function openDetail(id, focus) {
     ['Wall Througing', j.wall_throughging || ''], ['CLIP', j.clip || ''], ['ATB', j.atb || ''],
     ['Jam Datang', j.jam_datang || ''], ['Jam Selesai', j.jam_selesai || ''],
     ['Shareloc Pelanggan', j.lokasi_pelanggan], ['Shareloc ODP', j.lokasi_odp],
-    ['Validator', j.reviewed_by || '-'], ['Divalidasi', j.reviewed_at || '-']
+    ['Validator', j.reviewed_by || '-'], ['Divalidasi', j.reviewed_at || '-'],
+    ['Revisi Ke', j.rev_count || '0']
   ];
 
   let reviewHtml = '';
@@ -784,7 +785,9 @@ const PHOTO_MAP = {
   'ef-rumah':'foto_rumah','ef-prekso':'foto_prekso','ef-pengeleman':'foto_pengeleman',
   'ef-speedtest':'foto_speedtest','ef-plg':'foto_dengan_plg','ef-st':'foto_surat_tugas','ef-ba':'foto_ba',
   'ef-master':'foto_sn_master_ap','ef-slave1':'foto_sn_slave_ap1','ef-slave2':'foto_sn_slave_ap2',
-  'ef-slave3':'foto_sn_slave_ap3','ef-slave4':'foto_sn_slave_ap4'
+  'ef-slave3':'foto_sn_slave_ap3','ef-slave4':'foto_sn_slave_ap4',
+  'ef-redaman':'foto_redaman','ef-bangunan':'foto_bangunan_plg',
+  'ef-bc-dc':'foto_barcode_dc','ef-bc-odp':'foto_barcode_odp','ef-dc-valins':'foto_panjang_dc_valins'
 };
 const PHOTO_LABELS = {
   'foto_odp_buka':'ODP Terbuka','foto_odp_tutup':'ODP Tertutup','foto_sclamp_tiang':'S-Clamp Tiang',
@@ -818,7 +821,7 @@ const ALL_FIELDS = [
 async function openEditModal(id) {
   editJobId = id;
   const j = await fetch(`${API}/jobs/${id}`).then(r => r.json());
-  document.getElementById('edit-modal-title').textContent = `Revisi #${id} — ${j.wonum || ''}`;
+  document.getElementById('edit-modal-title').textContent = `Revisi #${id}${j.rev_count ? ' (Revisi ke-' + (j.rev_count + 1) + ')' : ''} — ${j.wonum || ''}`;
   document.getElementById('edit-err').style.display = 'none';
 
   // Parse review_items
@@ -928,7 +931,11 @@ async function resubmitJob() {
   }
   const r = await fetch(`${API}/jobs/${editJobId}/resubmit`, { method: 'POST' });
   const j = await r.json();
-  alert(j.success ? 'Dikirim ulang ke validasi.' : 'Gagal: ' + (j.error || ''));
+  if (j.success) {
+    alert(`Berhasil! Dikirim ulang ke validasi${j.rev_count ? ' (Revisi ke-' + j.rev_count + ')' : ''}.`);
+  } else {
+    alert('Gagal: ' + (j.error || ''));
+  }
   closeEditModal(); loadJobs();
 }
 
