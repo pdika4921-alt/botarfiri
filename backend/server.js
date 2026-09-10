@@ -23,7 +23,7 @@ process.on('uncaughtException', (err) => {
 const TOKEN      = process.env.TELEGRAM_TOKEN || 'ISI_TOKEN_BOT_ANDA';
 const PORT       = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
-const PUBLIC_URL = (process.env.PUBLIC_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://whitesmoke-hedgehog-526830.hostingersite.com').replace(/\/$/, '');
 // ────────────────────────────────────────────────────────
 
 const TOKEN_OK = TOKEN && !TOKEN.includes('ISI_TOKEN');
