@@ -252,7 +252,9 @@ const REPORT_FIELDS = [
   ['foto_sn_slave_ap4', 'SN Slave AP 4'], ['foto_prekso', 'Instalasi Prekso'],
   ['foto_pengeleman', 'Saat Pengeleman'], ['foto_speedtest', 'Speedtest'],
   ['foto_dengan_plg', 'Dengan Pelanggan'], ['foto_surat_tugas', 'Surat Tugas'],
-  ['foto_ba', 'BA TTD Pelanggan']
+  ['foto_ba', 'BA TTD Pelanggan'],
+  ['foto_barcode_dc', 'Barcode DC'], ['foto_barcode_odp', 'Barcode ODP'],
+  ['foto_panjang_dc_valins', 'Panjang DC Hasil Valins']
 ];
 async function sendJobReport(job) {
   if (!bot) return;
@@ -350,8 +352,10 @@ if (bot) {
         { key: 'no_voice', label: 'No. Voice', type: 'text', skippable: true, prompt: '☎️ Masukkan *NO. VOICE* (ketik /skip jika kosong):' },
         { key: 'label_odp', label: 'Label ODP', type: 'text', prompt: '🏷️ Masukkan *LABEL ODP*:' },
         { key: 'port_odp', label: 'Port ODP', type: 'text', prompt: '🔌 Masukkan *PORT ODP*:' },
-        { key: 'material_dc', label: 'Material DC/Precon (M)', type: 'text', prompt: '📏 Masukkan *MATERIAL DC/PRECON (M)*:' },
+        { key: 'material_dc', label: 'Panjang Material DC/Precon (M)', type: 'text', prompt: '📏 Masukkan *PANJANG MATERIAL DC/PRECON (M)*:' },
         { key: 'lokasi_odp', label: 'Shareloc ODP', type: 'location', prompt: '📍 *SHARE LOCATION ODP*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'foto_barcode_dc', label: 'Foto Barcode DC', type: 'photo', store: 'foto_barcode_dc', prompt: '📷 Kirim *FOTO BARCODE DC*:\n(Format JPG/PNG)' },
+        { key: 'foto_barcode_odp', label: 'Foto Barcode ODP', type: 'photo', store: 'foto_barcode_odp', prompt: '📷 Kirim *FOTO BARCODE ODP*:\n(Format JPG/PNG)' },
         { key: 'foto_redaman', label: 'Foto Redaman', type: 'photo', store: 'foto_redaman', prompt: '📷 Kirim *FOTO REDAMAN*:\n(Format JPG/PNG)' },
         { key: 'barcode_dc', label: 'Barcode DC', type: 'text', prompt: '📊 Masukkan *BARCODE DC*:' },
         { key: 'barcode_odp', label: 'Barcode ODP', type: 'text', prompt: '📊 Masukkan *BARCODE ODP*:' },
@@ -382,7 +386,8 @@ if (bot) {
         { key: 'sn_ap2', label: 'SN AP 2 (0 jika hanya 1)', type: 'text', prompt: '📡 Masukkan *SN AP 2* (ketik *0* jika hanya 1 AP):' },
         { key: 'foto_sn_ap2', label: 'Foto SN AP 2', type: 'photo', store: 'foto_sn_ap2', prompt: '📷 Kirim *FOTO SN AP 2* (kirim foto gelap jika hanya 1 AP):\n(Format JPG/PNG)' },
         { key: 'sn_ap3', label: 'SN AP 3 (0 jika hanya 2)', type: 'text', prompt: '📡 Masukkan *SN AP 3* (ketik *0* jika hanya 2 AP):' },
-        { key: 'foto_sn_ap3', label: 'Foto SN AP 3', type: 'photo', store: 'foto_sn_ap3', prompt: '📷 Kirim *FOTO SN AP 3* (kirim foto gelap jika hanya 2 AP):\n(Format JPG/PNG)' }
+        { key: 'foto_sn_ap3', label: 'Foto SN AP 3', type: 'photo', store: 'foto_sn_ap3', prompt: '📷 Kirim *FOTO SN AP 3* (kirim foto gelap jika hanya 2 AP):\n(Format JPG/PNG)' },
+        { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Hasil Valins', type: 'photo', store: 'foto_panjang_dc_valins', prompt: '📷 Kirim *FOTO PANJANG DC HASIL VALINS*:\n(Format JPG/PNG)' }
       );
     }
 
@@ -734,9 +739,9 @@ if (bot) {
         foto_speedtest,foto_dengan_plg,foto_surat_tugas,foto_ba,
         panjang_prekso,panjang_kabel_lan,jumlah_roset,jumlah_splitter,
         wall_throughging,clip,atb,jam_datang,jam_selesai,
-        foto_redaman,foto_bangunan_plg,
+        foto_redaman,foto_bangunan_plg,foto_barcode_dc,foto_barcode_odp,foto_panjang_dc_valins,
         sn_odp,sn_dc,sn_issue)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [d.nik, d.nama, d.wonum, d.sc, d.sto, d.layanan,
        d.no_internet || null, d.no_voice || null,
        d.label_odp || null, d.port_odp || null, d.material_dc || null,
@@ -761,6 +766,7 @@ if (bot) {
        d.wall_throughging || null, d.clip || null, d.atb || null,
        d.jam_datang || null, d.jam_selesai || null,
        d.foto_redaman || null, d.foto_bangunan_plg || null,
+       d.foto_barcode_dc || null, d.foto_barcode_odp || null, d.foto_panjang_dc_valins || null,
        d.sn_odp || null, d.sn_dc || null, d.sn_issue || 0]
     ).then((r) => {
       sessions.delete(chatId);
@@ -778,7 +784,8 @@ if (bot) {
         foto_ikr: d.foto_ikr, foto_sn_ont_terpasang: d.foto_sn_ont_terpasang,
         foto_sn_stb: d.foto_sn_stb, foto_sn_orbit: d.foto_sn_orbit,
         foto_sn_mesh: d.foto_sn_mesh, foto_belakang_ont: d.foto_belakang_ont,
-        foto_rumah: d.foto_rumah,
+        foto_rumah: d.foto_rumah, foto_barcode_dc: d.foto_barcode_dc,
+        foto_barcode_odp: d.foto_barcode_odp, foto_panjang_dc_valins: d.foto_panjang_dc_valins,
         sn_odp: d.sn_odp || null, sn_dc: d.sn_dc || null, sn_issue: d.sn_issue || 0 };
       sendJobReport(job);
       bot.sendMessage(chatId,
@@ -909,6 +916,64 @@ if (bot) {
         return;
       }
       if (!text) return bot.sendMessage(chatId, '⚠️ Kirim teks yang diminta, atau /batal untuk membatalkan.');
+
+      // ── Validasi duplikat sebelum menyimpan ──
+      const val = text.trim();
+      const DUPLICATE_FIELDS = {
+        'barcode_dc': 'Barcode DC',
+        'sn_ont': 'SN ONT',
+        'valins_id': 'Valins ID',
+        'wonum': 'WONUM',
+        'sc': 'SC',
+        'no_internet': 'No. Internet'
+      };
+
+      if (DUPLICATE_FIELDS[step.key]) {
+        const fieldName = DUPLICATE_FIELDS[step.key];
+        const colName = step.key;
+        const existing = await db.getP(
+          `SELECT id FROM jobs WHERE ${colName}=? LIMIT 1`,
+          [val]
+        ).catch(() => null);
+        if (existing) {
+          return bot.sendMessage(chatId,
+            `❌ *${fieldName}* "${val}" sudah pernah digunakan pada pekerjaan #${existing.id}.\nSilakan masukkan data yang berbeda.`,
+            { parse_mode: 'Markdown' }
+          );
+        }
+      }
+
+      // ── Validasi kombinasi Label ODP & Barcode ODP ──
+      if (step.key === 'label_odp') {
+        s.data.label_odp_temp = val; // simpan sementara untuk validasi barcode_odp nanti
+      }
+      if (step.key === 'barcode_odp' && s.data.label_odp) {
+        const labelOdp = s.data.label_odp;
+        const existingOdp = await db.getP(
+          `SELECT id, barcode_odp FROM jobs WHERE label_odp=? AND barcode_odp IS NOT NULL AND barcode_odp<>'' ORDER BY id DESC LIMIT 1`,
+          [labelOdp]
+        ).catch(() => null);
+        if (existingOdp && existingOdp.barcode_odp && existingOdp.barcode_odp !== val) {
+          return bot.sendMessage(chatId,
+            `❌ *Label ODP* "${labelOdp}" sudah terdaftar dengan *Barcode ODP* "${existingOdp.barcode_odp}" (pekerjaan #${existingOdp.id}).\nAnda memasukkan Barcode ODP "${val}" yang berbeda.\nSilakan periksa kembali.`,
+            { parse_mode: 'Markdown' }
+          );
+        }
+      }
+      if (step.key === 'label_odp') {
+        // Cek apakah label ODP sudah dipakai dengan barcode berbeda
+        const existingOdp = await db.getP(
+          `SELECT id, barcode_odp FROM jobs WHERE label_odp=? AND barcode_odp IS NOT NULL AND barcode_odp<>'' ORDER BY id DESC LIMIT 1`,
+          [val]
+        ).catch(() => null);
+        if (existingOdp && s.data.barcode_odp && existingOdp.barcode_odp !== s.data.barcode_odp) {
+          return bot.sendMessage(chatId,
+            `❌ *Label ODP* "${val}" sudah terdaftar dengan *Barcode ODP* "${existingOdp.barcode_odp}" (pekerjaan #${existingOdp.id}).\nAnda memasukkan Barcode ODP "${s.data.barcode_odp}" yang berbeda.\nSilakan periksa kembali.`,
+            { parse_mode: 'Markdown' }
+          );
+        }
+      }
+
       s.data[step.key] = text;
       // Override SN dari OCR jika input manual SN ODP/DC
       if (step.key === 'manual_sn_odp' && text) {
