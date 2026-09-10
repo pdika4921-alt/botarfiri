@@ -126,6 +126,40 @@
   .check-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:.88rem;}
   .check-row input{width:18px;height:18px;accent-color:var(--green);}
 
+  .rev-summary{display:flex;gap:10px;margin-bottom:14px;}
+  .rev-sum-item{padding:5px 12px;border-radius:8px;font-size:.78rem;font-weight:700;}
+  .rev-sum-ok{background:#dcfce7;color:#166534;}
+  .rev-sum-fail{background:#fef2f2;color:#991b1b;}
+
+  .rev-section{margin-top:14px;}
+  .rev-section-title{font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:8px;padding-bottom:4px;border-bottom:1px dashed var(--line);}
+
+  .rev-item{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;}
+  .rev-item-head{display:flex;align-items:center;gap:8px;font-size:.84rem;font-weight:600;}
+  .rev-icon{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0;}
+  .rev-ok{background:#dcfce7;color:#166534;}
+  .rev-missing{background:#fef2f2;color:#991b1b;}
+  .rev-opt{background:#f3f4f6;color:#6b7280;}
+  .rev-label{flex:1;}
+  .rev-item-detail{margin:6px 0 0 30px;}
+  .rev-item-actions{display:flex;align-items:center;gap:12px;margin-top:6px;margin-left:30px;}
+  .rev-item-actions label{font-size:.78rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;}
+  .rev-pass input{accent-color:#16a34a;}
+  .rev-fail input{accent-color:#dc2626;}
+  .rev-note-input{flex:1;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:.75rem;font-family:inherit;}
+
+  .rev-data-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.8rem;}
+  .rev-data-icon{width:18px;text-align:center;font-weight:800;font-size:.72rem;flex-shrink:0;}
+  .rev-data-label{flex:1;font-weight:500;}
+  .rev-data-val{font-family:monospace;font-size:.75rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .data-ok .rev-data-icon{color:#16a34a;}
+  .data-ok .rev-data-val{color:#16a34a;}
+  .data-missing .rev-data-icon{color:#dc2626;}
+  .data-missing .rev-data-label{color:#dc2626;font-weight:700;}
+  .data-missing .rev-data-val{color:#dc2626;font-weight:600;}
+  .data-opt .rev-data-icon{color:#9ca3af;}
+  .data-opt .rev-data-val{color:#9ca3af;}
+
   #lightbox{display:none;position:fixed;inset:0;background:rgba(10,20,40,.92);z-index:200;align-items:center;justify-content:center;cursor:zoom-out;}
   #lightbox.open{display:flex;}
   #lightbox img{max-width:92vw;max-height:90vh;border-radius:12px;}
@@ -575,37 +609,31 @@ async function openDetail(id, focus) {
 
   let reviewHtml = '';
   if ((ME.role === 'admin' || ME.role === 'validator') && j.status === 'PENDING') {
-    const cats = await fetch(`${API}/review-categories`).then(r => r.json());
-    reviewHtml = `
-      <div class="review-panel">
-        <div class="sec-title" style="margin-top:0">Checklist Validasi</div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Foto ODP buka (bersih & bebas patchcord)</label></div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Foto ODP tertutup</label></div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Foto S-Clamp tiang terpasang</label></div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Shareloc pelanggan & ODP tersedia</label></div>
-        <div class="check-row"><input type="checkbox" class="chk"><label>Data laporan lengkap</label></div>
-        <div style="margin-top:14px">
-          <label style="font-size:.76rem;font-weight:700;color:var(--navy)">Kategori Revisi</label>
-          <select id="rev-cat" style="width:100%;margin-top:6px;padding:9px;border:1.5px solid var(--line);border-radius:10px">
-            ${cats.map(c => `<option>${c}</option>`).join('')}
-          </select>
-        </div>
-        <div style="margin-top:12px">
-          <label style="font-size:.76rem;font-weight:700;color:var(--navy)">Catatan untuk Teknisi</label>
-          <textarea id="rev-note" rows="3" style="width:100%;margin-top:6px;padding:9px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit" placeholder="Tuliskan alasan / perbaikan yang dibutuhkan..."></textarea>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:16px">
-          <button class="btn btn-green" onclick="reviewJob(${j.id},'VALID')">✓ Setujui (Valid)</button>
-          <button class="btn btn-red" onclick="reviewJob(${j.id},'REJECT')">✕ Revisi (Ditolak)</button>
-        </div>
-      </div>`;
+    const [cats, autocheck] = await Promise.all([
+      fetch(`${API}/review-categories`).then(r => r.json()),
+      fetch(`${API}/jobs/${j.id}/autocheck`).then(r => r.json()).catch(() => null)
+    ]);
+    reviewHtml = buildReviewPanel(j, cats, autocheck);
   } else if (j.review_note) {
+    let reviewItemsHtml = '';
+    if (j.review_items) {
+      try {
+        const items = JSON.parse(j.review_items);
+        reviewItemsHtml = '<div style="margin-top:10px;font-size:.82rem"><b>Detail Validasi:</b><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">' +
+          items.filter(i => i.status !== 'ok').map(i =>
+            `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:.75rem;background:${i.status === 'missing' ? '#fef2f2' : '#fffbeb'};color:${i.status === 'missing' ? '#dc2626' : '#d97706'};border:1px solid ${i.status === 'missing' ? '#fecaca' : '#fde68a'}">
+              ${i.status === 'missing' ? '✕' : '⚠'} ${i.label}
+            </span>`
+          ).join('') + '</div></div>';
+      } catch(e) {}
+    }
     reviewHtml = `
       <div class="review-panel">
         <div class="sec-title" style="margin-top:0">Hasil Review</div>
         <div style="font-size:.88rem"><b>Status:</b> <span class="badge badge-${j.status}">${j.status}</span></div>
         ${j.review_cat ? `<div style="font-size:.86rem;margin-top:6px"><b>Kategori:</b> ${j.review_cat}</div>` : ''}
         ${j.review_note ? `<div style="font-size:.86rem;margin-top:6px"><b>Catatan:</b> ${j.review_note}</div>` : ''}
+        ${reviewItemsHtml}
       </div>`;
   }
 
@@ -635,14 +663,110 @@ Jam Selesai: ${j.jam_selesai || '-'}</div>
   document.getElementById('modal-bg').classList.add('open');
 }
 
+// ── Build Review Panel (dynamic per service type) ────────
+function buildReviewPanel(job, cats, autocheck) {
+  const autoPhotos = autocheck?.photos || [];
+  const autoData = autocheck?.data || [];
+  const summary = autocheck?.summary || { total: 0, passed: 0, failed: 0, missing: 0 };
+
+  // Photo checklist
+  const photoChecklist = autoPhotos.map(p => {
+    const exists = p.filled;
+    return `<div class="rev-item" data-key="${p.key}" data-type="photo">
+      <div class="rev-item-head">
+        <span class="rev-icon ${exists ? 'rev-ok' : (p.required ? 'rev-missing' : 'rev-opt')}">${exists ? '✓' : (p.required ? '✕' : '—')}</span>
+        <span class="rev-label">${p.label}${p.required ? ' <span style="color:#dc2626">*</span>' : ''}</span>
+      </div>
+      <div class="rev-item-detail">
+        ${exists ? `<img src="/uploads/${job[p.key]}" style="max-width:120px;max-height:80px;border-radius:6px;border:1px solid var(--line);cursor:zoom-in" onclick="lightbox('/uploads/${job[p.key]}')">` : `<span style="color:var(--muted);font-size:.75rem">${p.hint || 'Foto tidak ada'}</span>`}
+      </div>
+      <div class="rev-item-actions">
+        <label class="rev-pass"><input type="radio" name="rev_${p.key}" value="pass" ${exists ? 'checked' : ''}> Pass</label>
+        <label class="rev-fail"><input type="radio" name="rev_${p.key}" value="fail" ${!exists && p.required ? '' : ''}> Fail</label>
+        <input type="text" class="rev-note-input" placeholder="Catatan..." data-key="${p.key}">
+      </div>
+    </div>`;
+  }).join('');
+
+  // Data completeness
+  const dataChecklist = autoData.map(d => {
+    const filled = d.filled;
+    return `<div class="rev-data-item ${filled ? 'data-ok' : (d.required ? 'data-missing' : 'data-opt')}">
+      <span class="rev-data-icon">${filled ? '✓' : (d.required ? '✕' : '—')}</span>
+      <span class="rev-data-label">${d.label}</span>
+      <span class="rev-data-val">${filled ? d.value : (d.required ? 'KOSONG' : '-')}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="review-panel">
+    <div class="sec-title" style="margin-top:0">Checklist Validasi — <span style="font-weight:400;color:var(--muted)">${job.layanan}</span></div>
+
+    <div class="rev-summary">
+      <span class="rev-sum-item rev-sum-ok">${summary.passed} lengkap</span>
+      <span class="rev-sum-item rev-sum-fail">${summary.missing} kurang</span>
+    </div>
+
+    <div class="rev-section">
+      <div class="rev-section-title">📷 Foto yang Diperlukan</div>
+      ${photoChecklist || '<div style="color:var(--muted);font-size:.82rem">Tidak ada foto yang diperlukan untuk layanan ini</div>'}
+    </div>
+
+    <div class="rev-section">
+      <div class="rev-section-title">📋 Kelengkapan Data</div>
+      ${dataChecklist}
+    </div>
+
+    <div class="rev-section">
+      <div class="rev-section-title">Kategori Revisi</div>
+      <select id="rev-cat" style="width:100%;margin-top:6px;padding:9px;border:1.5px solid var(--line);border-radius:10px">
+        ${cats.map(c => `<option>${c}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="rev-section">
+      <div class="rev-section-title">Catatan untuk Teknisi</div>
+      <textarea id="rev-note" rows="3" style="width:100%;margin-top:6px;padding:9px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit" placeholder="Tuliskan alasan / perbaikan yang dibutuhkan..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-green" onclick="reviewJob(${job.id},'VALID')">✓ Setujui (Valid)</button>
+      <button class="btn btn-red" onclick="reviewJob(${job.id},'REJECT')">✕ Revisi (Ditolak)</button>
+    </div>
+  </div>`;
+}
+
 async function reviewJob(id, status) {
   const note = document.getElementById('rev-note') ? document.getElementById('rev-note').value : '';
   const cat = document.getElementById('rev-cat') ? document.getElementById('rev-cat').value : null;
+
+  // Collect per-item review results
+  const reviewItems = [];
+  document.querySelectorAll('.rev-item[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    const type = el.dataset.type;
+    const passRadio = el.querySelector(`input[name="rev_${key}"][value="pass"]`);
+    const failRadio = el.querySelector(`input[name="rev_${key}"][value="fail"]`);
+    const noteInput = el.querySelector('.rev-note-input');
+    let itemStatus = 'ok';
+    if (failRadio && failRadio.checked) itemStatus = 'fail';
+    else if (passRadio && passRadio.checked) itemStatus = 'pass';
+    reviewItems.push({ key, type, status: itemStatus, note: noteInput ? noteInput.value : '' });
+  });
+
+  // Auto-generate note from failed items if empty
+  let autoNote = note;
+  if (!autoNote && status === 'REJECT') {
+    const failed = reviewItems.filter(i => i.status === 'fail');
+    if (failed.length > 0) {
+      autoNote = 'Item yang perlu diperbaiki: ' + failed.map(i => i.key).join(', ');
+    }
+  }
+
   const label = status === 'VALID' ? 'setujui' : 'revisi';
   if (!confirm(`Yakin ${label} pekerjaan #${id}?`)) return;
   const r = await fetch(`${API}/jobs/${id}/review`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status, note, category: cat })
+    body: JSON.stringify({ status, note: autoNote, category: cat, review_items: reviewItems })
   });
   const j = await r.json();
   alert(j.success ? `Berhasil: #${id} → ${status}` : `Gagal: ${j.error || ''}`);

@@ -1316,6 +1316,241 @@ app.get('/api/jobs/:id', requireAuth, (req, res) => {
   });
 });
 
+// ── Validasi Rules per Kategori Layanan ─────────────────
+const VALIDATION_RULES = {
+  standard: {
+    photos: [
+      { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', required: true, hint: 'Bersih & bebas patchcord' },
+      { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', required: true },
+      { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', required: true, hint: 'Terpasang pada clampring & pakai ties cable' },
+      { key: 'foto_redaman', label: 'Foto Redaman', required: true },
+      { key: 'foto_barcode_dc', label: 'Foto Barcode DC', required: true },
+      { key: 'foto_barcode_odp', label: 'Foto Barcode ODP', required: true },
+      { key: 'foto_bangunan_plg', label: 'Foto Bangunan/Rumah PLG', required: true },
+      { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', required: true },
+      { key: 'foto_ikr', label: 'Foto IKR', required: true },
+      { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang', required: true },
+      { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Valins', required: true }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'label_odp', label: 'Label ODP', required: true },
+      { key: 'port_odp', label: 'Port ODP', required: true },
+      { key: 'sn_ont', label: 'SN ONT', required: true },
+      { key: 'valins_id', label: 'Valins ID', required: true },
+      { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', required: true },
+      { key: 'lokasi_odp', label: 'Shareloc ODP', required: true }
+    ]
+  },
+  tv: {
+    photos: [
+      { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', required: true, hint: 'Bersih & bebas patchcord' },
+      { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', required: true },
+      { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', required: true },
+      { key: 'foto_redaman', label: 'Foto Redaman', required: true },
+      { key: 'foto_barcode_dc', label: 'Foto Barcode DC', required: true },
+      { key: 'foto_barcode_odp', label: 'Foto Barcode ODP', required: true },
+      { key: 'foto_bangunan_plg', label: 'Foto Bangunan/Rumah PLG', required: true },
+      { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', required: true },
+      { key: 'foto_ikr', label: 'Foto IKR', required: true },
+      { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang', required: true },
+      { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Valins', required: true },
+      { key: 'foto_sn_stb', label: 'Foto SN STB', required: true }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'label_odp', label: 'Label ODP', required: true },
+      { key: 'port_odp', label: 'Port ODP', required: true },
+      { key: 'sn_ont', label: 'SN ONT', required: true },
+      { key: 'sn_stb', label: 'SN STB', required: true },
+      { key: 'valins_id', label: 'Valins ID', required: true },
+      { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', required: true },
+      { key: 'lokasi_odp', label: 'Shareloc ODP', required: true }
+    ]
+  },
+  ap: {
+    photos: [
+      { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', required: true },
+      { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', required: true },
+      { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', required: true },
+      { key: 'foto_redaman', label: 'Foto Redaman', required: true },
+      { key: 'foto_barcode_dc', label: 'Foto Barcode DC', required: true },
+      { key: 'foto_barcode_odp', label: 'Foto Barcode ODP', required: true },
+      { key: 'foto_bangunan_plg', label: 'Foto Bangunan/Rumah PLG', required: true },
+      { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', required: true },
+      { key: 'foto_ikr', label: 'Foto IKR', required: true },
+      { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang', required: true },
+      { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Valins', required: true },
+      { key: 'foto_sn_ap1', label: 'Foto SN AP 1', required: true },
+      { key: 'foto_sn_ap2', label: 'Foto SN AP 2', required: false, hint: 'Kirim foto gelap jika hanya 1 AP' },
+      { key: 'foto_sn_ap3', label: 'Foto SN AP 3', required: false, hint: 'Kirim foto gelap jika hanya 2 AP' }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'label_odp', label: 'Label ODP', required: true },
+      { key: 'port_odp', label: 'Port ODP', required: true },
+      { key: 'sn_ont', label: 'SN ONT', required: true },
+      { key: 'sn_ap1', label: 'SN AP 1', required: true },
+      { key: 'valins_id', label: 'Valins ID', required: true },
+      { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', required: true },
+      { key: 'lokasi_odp', label: 'Shareloc ODP', required: true }
+    ]
+  },
+  mostb: {
+    photos: [
+      { key: 'foto_sn_stb', label: 'Foto SN STB', required: true }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'sn_stb', label: 'SN STB', required: true },
+      { key: 'sn_ont', label: 'SN ONT', required: true }
+    ]
+  },
+  smooa: {
+    photos: [],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'smooa_nohp', label: 'SMOOA NO.HP', required: true }
+    ]
+  },
+  orbit: {
+    photos: [
+      { key: 'foto_sn_orbit', label: 'Foto SN ORBIT', required: true }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'no_orbit', label: 'No. ORBIT', required: true },
+      { key: 'sn_orbit', label: 'SN ORBIT', required: true }
+    ]
+  },
+  mesh: {
+    photos: [
+      { key: 'foto_sn_mesh', label: 'Foto SN MESH WIFI', required: true },
+      { key: 'foto_belakang_ont', label: 'Foto Belakang ONT', required: true }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'sn_mesh', label: 'SN MESH WIFI', required: true },
+      { key: 'sn_ont', label: 'SN ONT', required: true }
+    ]
+  },
+  ganti_ont: {
+    photos: [
+      { key: 'foto_belakang_ont', label: 'Foto Belakang ONT', required: true }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'sn_ont', label: 'SN ONT', required: true }
+    ]
+  },
+  fttr: {
+    photos: [
+      { key: 'foto_rumah', label: 'Foto Rumah Pelanggan', required: true },
+      { key: 'foto_sn_master_ap', label: 'Foto SN Master AP', required: true },
+      { key: 'foto_sn_slave_ap1', label: 'Foto Slave AP 1', required: true },
+      { key: 'foto_sn_slave_ap2', label: 'Foto Slave AP 2', required: false, hint: 'Foto gelap jika hanya 1 AP' },
+      { key: 'foto_sn_slave_ap3', label: 'Foto Slave AP 3', required: false, hint: 'Foto gelap jika hanya 2 AP' },
+      { key: 'foto_sn_slave_ap4', label: 'Foto Slave AP 4', required: false, hint: 'Foto gelap jika hanya 3 AP' },
+      { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT', required: true },
+      { key: 'foto_prekso', label: 'Foto Instalasi Prekso', required: true },
+      { key: 'foto_pengeleman', label: 'Foto Saat Pengeleman', required: true },
+      { key: 'foto_speedtest', label: 'Foto Speedtest', required: true },
+      { key: 'foto_dengan_plg', label: 'Foto Dengan Pelanggan', required: true },
+      { key: 'foto_surat_tugas', label: 'Foto Surat Tugas TTD', required: true },
+      { key: 'foto_ba', label: 'Foto BA TTD Pelanggan', required: true }
+    ],
+    data: [
+      { key: 'wonum', label: 'WONUM', required: true },
+      { key: 'sc', label: 'SC', required: true },
+      { key: 'sto', label: 'STO', required: true },
+      { key: 'layanan', label: 'Layanan', required: true },
+      { key: 'no_internet', label: 'No. Internet', required: true },
+      { key: 'sn_ont', label: 'SN ONT', required: true },
+      { key: 'sn_ap1', label: 'SN Master AP', required: true },
+      { key: 'panjang_prekso', label: 'Panjang Prekso', required: true },
+      { key: 'panjang_kabel_lan', label: 'Panjang Kabel LAN', required: true },
+      { key: 'jumlah_roset', label: 'Jumlah Roset', required: true },
+      { key: 'jam_datang', label: 'Jam Datang', required: true },
+      { key: 'jam_selesai', label: 'Jam Selesai', required: true }
+    ]
+  }
+};
+
+// Fallback: gunakan standard jika kategori tidak dikenal
+function getValidationRules(layanan) {
+  const cat = typeof getLayananCategory === 'function' ? getLayananCategory(layanan) : 'standard';
+  return VALIDATION_RULES[cat] || VALIDATION_RULES.standard;
+}
+
+// ── Auto-check: Evaluasi kelengkapan data & foto ────────
+app.get('/api/jobs/:id/autocheck', requireAuth, async (req, res) => {
+  try {
+    const job = await db.getP('SELECT * FROM jobs WHERE id=?', [req.params.id]);
+    if (!job) return res.status(404).json({ error: 'Tidak ditemukan' });
+
+    const rules = getValidationRules(job.layanan);
+    const results = { photos: [], data: [], summary: { total: 0, passed: 0, failed: 0, missing: 0 } };
+
+    // Cek foto
+    for (const rule of rules.photos) {
+      const val = job[rule.key];
+      const exists = !!val;
+      const item = { key: rule.key, label: rule.label, required: rule.required, hint: rule.hint || '', filled: exists, status: exists ? 'ok' : (rule.required ? 'missing' : 'optional') };
+      results.photos.push(item);
+      results.summary.total++;
+      if (exists) results.summary.passed++;
+      else if (rule.required) results.summary.missing++;
+    }
+
+    // Cek data
+    for (const rule of rules.data) {
+      const val = job[rule.key];
+      const filled = !!val && String(val).trim() !== '';
+      const item = { key: rule.key, label: rule.label, required: rule.required, value: val || '', filled, status: filled ? 'ok' : (rule.required ? 'missing' : 'optional') };
+      results.data.push(item);
+      results.summary.total++;
+      if (filled) results.summary.passed++;
+      else if (rule.required) results.summary.missing++;
+    }
+
+    results.summary.failed = results.summary.missing;
+    res.json(results);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Validasi / Revisi oleh validator/admin ────────────────
 const REVIEW_CATEGORIES = [
   'Foto ODP tidak lengkap',
@@ -1328,7 +1563,7 @@ const REVIEW_CATEGORIES = [
 ];
 
 app.post('/api/jobs/:id/review', requireRole('validator', 'admin'), async (req, res) => {
-  const { status, note, category } = req.body;
+  const { status, note, category, review_items } = req.body;
   if (!['VALID', 'REJECT'].includes(status)) return res.status(400).json({ error: 'Status tidak valid' });
 
   try {
@@ -1339,9 +1574,10 @@ app.post('/api/jobs/:id/review', requireRole('validator', 'admin'), async (req, 
     if (job.status === 'VALID' && req.session.user.role !== 'admin')
       return res.status(403).json({ error: 'Data sudah final (VALID). Hanya admin yang bisa mengubahnya.' });
 
+    const reviewItemsJson = review_items ? JSON.stringify(review_items) : null;
     const upd = await db.runP(
-      `UPDATE jobs SET status=?, review_note=?, review_cat=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP, ack=0 WHERE id=?`,
-      [status, note || null, category || null, req.session.user.username, req.params.id]
+      `UPDATE jobs SET status=?, review_note=?, review_cat=?, review_items=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP, ack=0 WHERE id=?`,
+      [status, note || null, category || null, reviewItemsJson, req.session.user.username, req.params.id]
     );
     if (!upd.changes) return res.status(404).json({ error: 'Tidak ditemukan' });
 
@@ -1357,6 +1593,10 @@ app.post('/api/jobs/:id/review', requireRole('validator', 'admin'), async (req, 
 });
 
 app.get('/api/review-categories', requireAuth, (req, res) => res.json(REVIEW_CATEGORIES));
+app.get('/api/validation-rules/:layanan', requireAuth, (req, res) => {
+  const rules = getValidationRules(req.params.layanan);
+  res.json(rules);
+});
 
 // ── Teknisi: tandai revisi sudah dibaca ──────────────────
 app.post('/api/jobs/:id/ack', requireRole('teknisi'), async (req, res) => {
