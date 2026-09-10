@@ -343,54 +343,109 @@ if (bot) {
       { key: 'layanan', label: 'Layanan', type: 'choice', options: LAYANAN_OPTIONS, prompt: '📦 Pilih *JENIS LAYANAN*:' },
     ];
 
-    // Steps spesifik berdasarkan kategori
     const specific = [];
 
-    if (cat === 'standard' || cat === 'tv' || cat === 'ap') {
+    // ══════════════════════════════════════════════════════════
+    // 1) STANDARD: 1P (INET), 1P (TELP), 2P (INET+TLP), ASTINET, WMS
+    // ══════════════════════════════════════════════════════════
+    if (cat === 'standard') {
       specific.push(
         { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
-        { key: 'no_voice', label: 'No. Voice', type: 'text', skippable: true, prompt: '☎️ Masukkan *NO. VOICE* (ketik /skip jika kosong):' },
+        { key: 'no_voice', label: 'No. Telp', type: 'text', prompt: '☎️ Masukkan *NO. TELP*:' },
         { key: 'label_odp', label: 'Label ODP', type: 'text', prompt: '🏷️ Masukkan *LABEL ODP*:' },
         { key: 'port_odp', label: 'Port ODP', type: 'text', prompt: '🔌 Masukkan *PORT ODP*:' },
         { key: 'material_dc', label: 'Panjang Material DC/Precon (M)', type: 'text', prompt: '📏 Masukkan *PANJANG MATERIAL DC/PRECON (M)*:' },
         { key: 'lokasi_odp', label: 'Shareloc ODP', type: 'location', prompt: '📍 *SHARE LOCATION ODP*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'barcode_dc', label: 'Barcode DC', type: 'text', prompt: '📊 Masukkan *BARCODE DC*:' },
+        { key: 'barcode_odp', label: 'Barcode ODP', type: 'text', prompt: '📊 Masukkan *BARCODE ODP*:' },
         { key: 'foto_barcode_dc', label: 'Foto Barcode DC', type: 'photo', store: 'foto_barcode_dc', prompt: '📷 Kirim *FOTO BARCODE DC*:\n(Format JPG/PNG)' },
         { key: 'foto_barcode_odp', label: 'Foto Barcode ODP', type: 'photo', store: 'foto_barcode_odp', prompt: '📷 Kirim *FOTO BARCODE ODP*:\n(Format JPG/PNG)' },
         { key: 'foto_redaman', label: 'Foto Redaman', type: 'photo', store: 'foto_redaman', prompt: '📷 Kirim *FOTO REDAMAN*:\n(Format JPG/PNG)' },
-        { key: 'barcode_dc', label: 'Barcode DC', type: 'text', prompt: '📊 Masukkan *BARCODE DC*:' },
-        { key: 'barcode_odp', label: 'Barcode ODP', type: 'text', prompt: '📊 Masukkan *BARCODE ODP*:' },
-        { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', type: 'location', prompt: '📍 *SHARE LOCATION PELANGGAN*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
         { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', type: 'photo', store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BERSIH & BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
         { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', type: 'photo', store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
         { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', type: 'photo', store: 'foto_sclamp_tiang', prompt: '📷 Kirim *FOTO S-CLAMP TIANG TERPASANG PADA CLAMPRING & PAKAI TIES CABLE*:\n(Format JPG/PNG)' },
+        { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', type: 'location', prompt: '📍 *SHARE LOCATION PELANGGAN*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
         { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
         { key: 'valins_id', label: 'Valins ID', type: 'text', prompt: '🆔 Masukkan *VALINS ID*:' },
         { key: 'foto_bangunan_plg', label: 'Foto Bangunan/Rumah Pelanggan', type: 'photo', store: 'foto_bangunan_plg', prompt: '📷 Kirim *FOTO BANGUNAN/RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
         { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', type: 'photo', store: 'foto_clamp_hook', prompt: '📷 Kirim *FOTO CLAMPHOOK*:\n(Format JPG/PNG)' },
         { key: 'foto_ikr', label: 'Foto IKR', type: 'photo', store: 'foto_ikr', prompt: '📷 Kirim *FOTO IKR*:\n(Format JPG/PNG)' },
-        { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang Kabel DC', type: 'photo', store: 'foto_sn_ont_terpasang', prompt: '📷 Kirim *FOTO SN ONT TERPASANG KABEL DC*:\n(Format JPG/PNG)' }
+        { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang Kabel DC', type: 'photo', store: 'foto_sn_ont_terpasang', prompt: '📷 Kirim *FOTO SN ONT TERPASANG KABEL DC*:\n(Format JPG/PNG)' },
+        { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Hasil Valins', type: 'photo', store: 'foto_panjang_dc_valins', prompt: '📷 Kirim *FOTO PANJANG DC HASIL VALINS*:\n(Format JPG/PNG)' }
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // 2) TV: 2P (INET+TV), 3P
+    // ══════════════════════════════════════════════════════════
     if (cat === 'tv') {
       specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'no_voice', label: 'No. Telp', type: 'text', prompt: '☎️ Masukkan *NO. TELP*:' },
+        { key: 'label_odp', label: 'Label ODP', type: 'text', prompt: '🏷️ Masukkan *LABEL ODP*:' },
+        { key: 'port_odp', label: 'Port ODP', type: 'text', prompt: '🔌 Masukkan *PORT ODP*:' },
+        { key: 'material_dc', label: 'Panjang Material DC/Precon (M)', type: 'text', prompt: '📏 Masukkan *PANJANG MATERIAL DC/PRECON (M)*:' },
+        { key: 'lokasi_odp', label: 'Shareloc ODP', type: 'location', prompt: '📍 *SHARE LOCATION ODP*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'barcode_dc', label: 'Barcode DC', type: 'text', prompt: '📊 Masukkan *BARCODE DC*:' },
+        { key: 'barcode_odp', label: 'Barcode ODP', type: 'text', prompt: '📊 Masukkan *BARCODE ODP*:' },
+        { key: 'foto_barcode_dc', label: 'Foto Barcode DC', type: 'photo', store: 'foto_barcode_dc', prompt: '📷 Kirim *FOTO BARCODE DC*:\n(Format JPG/PNG)' },
+        { key: 'foto_barcode_odp', label: 'Foto Barcode ODP', type: 'photo', store: 'foto_barcode_odp', prompt: '📷 Kirim *FOTO BARCODE ODP*:\n(Format JPG/PNG)' },
+        { key: 'foto_redaman', label: 'Foto Redaman', type: 'photo', store: 'foto_redaman', prompt: '📷 Kirim *FOTO REDAMAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', type: 'photo', store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BERSIH & BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
+        { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', type: 'photo', store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
+        { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', type: 'photo', store: 'foto_sclamp_tiang', prompt: '📷 Kirim *FOTO S-CLAMP TIANG TERPASANG PADA CLAMPRING & PAKAI TIES CABLE*:\n(Format JPG/PNG)' },
+        { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', type: 'location', prompt: '📍 *SHARE LOCATION PELANGGAN*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
         { key: 'sn_stb', label: 'SN STB', type: 'text', prompt: '📺 Masukkan *SN STB*:' },
+        { key: 'valins_id', label: 'Valins ID', type: 'text', prompt: '🆔 Masukkan *VALINS ID*:' },
+        { key: 'foto_bangunan_plg', label: 'Foto Bangunan/Rumah Pelanggan', type: 'photo', store: 'foto_bangunan_plg', prompt: '📷 Kirim *FOTO BANGUNAN/RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', type: 'photo', store: 'foto_clamp_hook', prompt: '📷 Kirim *FOTO CLAMPHOOK*:\n(Format JPG/PNG)' },
+        { key: 'foto_ikr', label: 'Foto IKR', type: 'photo', store: 'foto_ikr', prompt: '📷 Kirim *FOTO IKR*:\n(Format JPG/PNG)' },
+        { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang Kabel DC', type: 'photo', store: 'foto_sn_ont_terpasang', prompt: '📷 Kirim *FOTO SN ONT TERPASANG KABEL DC*:\n(Format JPG/PNG)' },
+        { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Hasil Valins', type: 'photo', store: 'foto_panjang_dc_valins', prompt: '📷 Kirim *FOTO PANJANG DC HASIL VALINS*:\n(Format JPG/PNG)' },
         { key: 'foto_sn_stb', label: 'Foto SN STB', type: 'photo', store: 'foto_sn_stb', prompt: '📷 Kirim *FOTO SN STB*:\n(Format JPG/PNG)' }
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // 3) AP: ASTINET with AP, WMS with AP
+    // ══════════════════════════════════════════════════════════
     if (cat === 'ap') {
       specific.push(
+        { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
+        { key: 'no_voice', label: 'No. Telp', type: 'text', prompt: '☎️ Masukkan *NO. TELP*:' },
+        { key: 'label_odp', label: 'Label ODP', type: 'text', prompt: '🏷️ Masukkan *LABEL ODP*:' },
+        { key: 'port_odp', label: 'Port ODP', type: 'text', prompt: '🔌 Masukkan *PORT ODP*:' },
+        { key: 'material_dc', label: 'Panjang Material DC/Precon (M)', type: 'text', prompt: '📏 Masukkan *PANJANG MATERIAL DC/PRECON (M)*:' },
+        { key: 'lokasi_odp', label: 'Shareloc ODP', type: 'location', prompt: '📍 *SHARE LOCATION ODP*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'barcode_dc', label: 'Barcode DC', type: 'text', prompt: '📊 Masukkan *BARCODE DC*:' },
+        { key: 'barcode_odp', label: 'Barcode ODP', type: 'text', prompt: '📊 Masukkan *BARCODE ODP*:' },
+        { key: 'foto_barcode_dc', label: 'Foto Barcode DC', type: 'photo', store: 'foto_barcode_dc', prompt: '📷 Kirim *FOTO BARCODE DC*:\n(Format JPG/PNG)' },
+        { key: 'foto_barcode_odp', label: 'Foto Barcode ODP', type: 'photo', store: 'foto_barcode_odp', prompt: '📷 Kirim *FOTO BARCODE ODP*:\n(Format JPG/PNG)' },
+        { key: 'foto_redaman', label: 'Foto Redaman', type: 'photo', store: 'foto_redaman', prompt: '📷 Kirim *FOTO REDAMAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_odp_buka', label: 'Foto ODP Terbuka', type: 'photo', store: 'foto_odp_buka', prompt: '📷 Kirim *FOTO ODP TERBUKA (BERSIH & BEBAS PATCHCORD)*:\n(Format JPG/PNG)' },
+        { key: 'foto_odp_tutup', label: 'Foto ODP Tertutup', type: 'photo', store: 'foto_odp_tutup', prompt: '📷 Kirim *FOTO ODP TERTUTUP*:\n(Format JPG/PNG)' },
+        { key: 'foto_sclamp_tiang', label: 'Foto S-Clamp Tiang', type: 'photo', store: 'foto_sclamp_tiang', prompt: '📷 Kirim *FOTO S-CLAMP TIANG TERPASANG PADA CLAMPRING & PAKAI TIES CABLE*:\n(Format JPG/PNG)' },
+        { key: 'lokasi_pelanggan', label: 'Shareloc Pelanggan', type: 'location', prompt: '📍 *SHARE LOCATION PELANGGAN*.\nTekan ikon 📎 ▶ Location, lalu kirim lokasinya:' },
+        { key: 'sn_ont', label: 'SN ONT', type: 'text', prompt: '🆔 Masukkan *SN ONT*:' },
+        { key: 'valins_id', label: 'Valins ID', type: 'text', prompt: '🆔 Masukkan *VALINS ID*:' },
+        { key: 'foto_bangunan_plg', label: 'Foto Bangunan/Rumah Pelanggan', type: 'photo', store: 'foto_bangunan_plg', prompt: '📷 Kirim *FOTO BANGUNAN/RUMAH PELANGGAN*:\n(Format JPG/PNG)' },
+        { key: 'foto_clamp_hook', label: 'Foto Clamp Hook', type: 'photo', store: 'foto_clamp_hook', prompt: '📷 Kirim *FOTO CLAMPHOOK*:\n(Format JPG/PNG)' },
+        { key: 'foto_ikr', label: 'Foto IKR', type: 'photo', store: 'foto_ikr', prompt: '📷 Kirim *FOTO IKR*:\n(Format JPG/PNG)' },
+        { key: 'foto_sn_ont_terpasang', label: 'Foto SN ONT Terpasang Kabel DC', type: 'photo', store: 'foto_sn_ont_terpasang', prompt: '📷 Kirim *FOTO SN ONT TERPASANG KABEL DC*:\n(Format JPG/PNG)' },
+        { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Hasil Valins', type: 'photo', store: 'foto_panjang_dc_valins', prompt: '📷 Kirim *FOTO PANJANG DC HASIL VALINS*:\n(Format JPG/PNG)' },
         { key: 'sn_ap1', label: 'SN AP 1', type: 'text', prompt: '📡 Masukkan *SN AP 1*:' },
         { key: 'foto_sn_ap1', label: 'Foto SN AP 1', type: 'photo', store: 'foto_sn_ap1', prompt: '📷 Kirim *FOTO SN AP 1*:\n(Format JPG/PNG)' },
         { key: 'sn_ap2', label: 'SN AP 2 (0 jika hanya 1)', type: 'text', prompt: '📡 Masukkan *SN AP 2* (ketik *0* jika hanya 1 AP):' },
         { key: 'foto_sn_ap2', label: 'Foto SN AP 2', type: 'photo', store: 'foto_sn_ap2', prompt: '📷 Kirim *FOTO SN AP 2* (kirim foto gelap jika hanya 1 AP):\n(Format JPG/PNG)' },
         { key: 'sn_ap3', label: 'SN AP 3 (0 jika hanya 2)', type: 'text', prompt: '📡 Masukkan *SN AP 3* (ketik *0* jika hanya 2 AP):' },
-        { key: 'foto_sn_ap3', label: 'Foto SN AP 3', type: 'photo', store: 'foto_sn_ap3', prompt: '📷 Kirim *FOTO SN AP 3* (kirim foto gelap jika hanya 2 AP):\n(Format JPG/PNG)' },
-        { key: 'foto_panjang_dc_valins', label: 'Foto Panjang DC Hasil Valins', type: 'photo', store: 'foto_panjang_dc_valins', prompt: '📷 Kirim *FOTO PANJANG DC HASIL VALINS*:\n(Format JPG/PNG)' }
+        { key: 'foto_sn_ap3', label: 'Foto SN AP 3', type: 'photo', store: 'foto_sn_ap3', prompt: '📷 Kirim *FOTO SN AP 3* (kirim foto gelap jika hanya 2 AP):\n(Format JPG/PNG)' }
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // MO STB, MO STB 2ND
+    // ══════════════════════════════════════════════════════════
     if (cat === 'mostb') {
       specific.push(
         { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
@@ -400,12 +455,18 @@ if (bot) {
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // SMOOA
+    // ══════════════════════════════════════════════════════════
     if (cat === 'smooa') {
       specific.push(
         { key: 'smooa_nohp', label: 'SMOOA 3 NO.HP', type: 'text', prompt: '📱 Masukkan *SMOOA 3 NO.HP*:' }
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // ORBIT
+    // ══════════════════════════════════════════════════════════
     if (cat === 'orbit') {
       specific.push(
         { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
@@ -415,6 +476,9 @@ if (bot) {
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // MESH WIFI
+    // ══════════════════════════════════════════════════════════
     if (cat === 'mesh') {
       specific.push(
         { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
@@ -425,6 +489,9 @@ if (bot) {
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // MO GANTI ONT
+    // ══════════════════════════════════════════════════════════
     if (cat === 'ganti_ont') {
       specific.push(
         { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
@@ -433,6 +500,9 @@ if (bot) {
       );
     }
 
+    // ══════════════════════════════════════════════════════════
+    // FTTR
+    // ══════════════════════════════════════════════════════════
     if (cat === 'fttr') {
       specific.push(
         { key: 'no_internet', label: 'No. Internet', type: 'text', prompt: '🌐 Masukkan *NO. INTERNET*:' },
