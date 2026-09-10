@@ -1628,7 +1628,7 @@ app.patch('/api/jobs/:id', requireRole('teknisi'), async (req, res) => {
     for (const f of EDITABLE_FIELDS) {
       if (req.body[f] !== undefined) { sets.push(`${f}=?`); params.push(req.body[f] === '' ? null : req.body[f]); }
     }
-    if (!sets.length) return res.status(400).json({ error: 'Tidak ada field yang diubah' });
+    if (!sets.length) return res.json({ success: true });
     params.push(req.params.id);
     await db.runP(`UPDATE jobs SET ${sets.join(', ')} WHERE id=?`, params);
     res.json({ success: true });
@@ -1731,7 +1731,7 @@ const PHOTO_FIELDS = ['foto_odp_buka', 'foto_odp_tutup', 'foto_sclamp_tiang', 'f
   'foto_rumah', 'foto_sn_master_ap', 'foto_sn_slave_ap1', 'foto_sn_slave_ap2',
   'foto_sn_slave_ap3', 'foto_sn_slave_ap4', 'foto_prekso', 'foto_pengeleman',
   'foto_speedtest', 'foto_dengan_plg', 'foto_surat_tugas', 'foto_ba',
-  'foto_redaman', 'foto_bangunan_plg'];
+  'foto_redaman', 'foto_bangunan_plg', 'foto_barcode_dc', 'foto_barcode_odp', 'foto_panjang_dc_valins'];
 app.post('/api/jobs/:id/upload', requireAuth, upload.fields(
   PHOTO_FIELDS.map(n => ({ name: n, maxCount: 1 }))
 ), async (req, res) => {
